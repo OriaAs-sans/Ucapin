@@ -1,0 +1,304 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Self-hosted Typography (design.md §4) */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/bricolage-grotesque-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/bricolage-grotesque-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/atkinson-hyperlegible-next-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/atkinson-hyperlegible-next-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Charis SIL";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/charis-sil-400-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Charis SIL";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/charis-sil-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  color-scheme: light;
+  /* User-supplied palette */
+  --teal-900: #1E3E45;
+  --teal-800: #274C56;
+  --teal-600: #3B6A78;
+  --sand: #D4C8B7;
+  --beige: #E5E1CD;
+  --canvas: #E8E5D7;
+  --paper: #F7F5EE;
+  --coral: #FF7A59;
+  --on-coral: #13292E;
+
+  /* Semantic light tokens */
+  --bg: var(--canvas);
+  --surface: var(--paper);
+  --surface-2: var(--beige);
+  --line: var(--sand);
+  --text: var(--teal-900);
+  --text-2: var(--teal-600);
+  --link: var(--teal-800);
+  --btn-bg: var(--teal-800);
+  --btn-fg: var(--paper);
+  --btn-hover: var(--teal-900);
+  --side-bg: var(--teal-900);
+  --side-text: var(--beige);
+  --side-text-2: var(--sand);
+  --side-active: var(--teal-800);
+  --ok: #2F6B4F;
+  --ok-wash: #DDE8DF;
+  --almost: #9A7124;
+  --almost-text: #7A5A1A;
+  --almost-wash: #F3E7C8;
+  --work: #B5523B;
+  --work-text: #9A4330;
+  --work-wash: #F6DED5;
+  --focus: #9A4330;
+
+  --tile-teal: #DCE8EA;
+  --tile-teal-fg: #274C56;
+  --tile-coral: #FFE2D8;
+  --tile-coral-fg: #B4401F;
+  --tile-green: #DDEEE3;
+  --tile-green-fg: #2F6B4F;
+  --tile-ochre: #F6EBCF;
+  --tile-ochre-fg: #7A5A1A;
+
+  --hero-bg: linear-gradient(135deg, #274C56 0%, #1E3E45 100%);
+  --hero-fg: #F7F5EE;
+  --hero-fg-2: #D4C8B7;
+  --card-border: #D4C8B7;
+  --shadow-card: 0 8px 24px rgba(30, 62, 69, 0.06);
+  --shadow-float: 0 12px 28px rgba(30, 62, 69, 0.22);
+
+  --font-ui: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-ipa: "Charis SIL", Georgia, serif;
+
+  --r-card: 22px;
+  --r-control: 14px;
+  --r-pill: 999px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.3, 1.25, 0.6, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #13292E;
+    --surface: #1B353B;
+    --surface-2: #22414A;
+    --line: rgba(212, 200, 183, 0.22);
+    --text: #E8E5D7;
+    --text-2: #B9C9CC;
+    --link: #8FC3D1;
+    --btn-bg: #E5E1CD;
+    --btn-fg: #1E3E45;
+    --btn-hover: #F7F5EE;
+    --side-bg: #0E2125;
+    --side-text: #E5E1CD;
+    --side-text-2: #D4C8B7;
+    --side-active: #1E3E45;
+    --ok: #7CC7A0;
+    --ok-wash: rgba(124, 199, 160, 0.14);
+    --almost: #E3B95E;
+    --almost-text: #E3B95E;
+    --almost-wash: rgba(227, 185, 94, 0.14);
+    --work: #F2937C;
+    --work-text: #F2937C;
+    --work-wash: rgba(242, 147, 124, 0.14);
+    --focus: #FF7A59;
+    --tile-teal: rgba(143, 195, 209, 0.14);
+    --tile-teal-fg: #8FC3D1;
+    --tile-coral: rgba(255, 122, 89, 0.16);
+    --tile-coral-fg: #FF9B80;
+    --tile-green: rgba(124, 199, 160, 0.14);
+    --tile-green-fg: #7CC7A0;
+    --tile-ochre: rgba(227, 185, 94, 0.14);
+    --tile-ochre-fg: #E3B95E;
+    --hero-bg: linear-gradient(135deg, #22414A 0%, #0E2125 100%);
+    --card-border: rgba(212, 200, 183, 0.22);
+    --shadow-card: none;
+    --shadow-float: 0 12px 28px rgba(0, 0, 0, 0.45);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #13292E;
+  --surface: #1B353B;
+  --surface-2: #22414A;
+  --line: rgba(212, 200, 183, 0.22);
+  --text: #E8E5D7;
+  --text-2: #B9C9CC;
+  --link: #8FC3D1;
+  --btn-bg: #E5E1CD;
+  --btn-fg: #1E3E45;
+  --btn-hover: #F7F5EE;
+  --side-bg: #0E2125;
+  --side-text: #E5E1CD;
+  --side-text-2: #D4C8B7;
+  --side-active: #1E3E45;
+  --ok: #7CC7A0;
+  --ok-wash: rgba(124, 199, 160, 0.14);
+  --almost: #E3B95E;
+  --almost-text: #E3B95E;
+  --almost-wash: rgba(227, 185, 94, 0.14);
+  --work: #F2937C;
+  --work-text: #F2937C;
+  --work-wash: rgba(242, 147, 124, 0.14);
+  --focus: #FF7A59;
+  --tile-teal: rgba(143, 195, 209, 0.14);
+  --tile-teal-fg: #8FC3D1;
+  --tile-coral: rgba(255, 122, 89, 0.16);
+  --tile-coral-fg: #FF9B80;
+  --tile-green: rgba(124, 199, 160, 0.14);
+  --tile-green-fg: #7CC7A0;
+  --tile-ochre: rgba(227, 185, 94, 0.14);
+  --tile-ochre-fg: #E3B95E;
+  --hero-bg: linear-gradient(135deg, #22414A 0%, #0E2125 100%);
+  --card-border: rgba(212, 200, 183, 0.22);
+  --shadow-card: none;
+  --shadow-float: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.55 var(--font-ui);
+  caret-color: var(--coral);
+  scrollbar-color: var(--line) var(--bg);
+  transition: background-color 200ms var(--ease-out), color 200ms var(--ease-out);
+}
+
+::selection {
+  background: var(--coral);
+  color: var(--on-coral);
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Proofreading underline system (WCAG 1.4.1: style + color + icon + label) */
+.mk {
+  text-decoration-line: underline;
+  text-decoration-thickness: 3.5px;
+  text-underline-offset: 0.22em;
+  text-decoration-skip-ink: none;
+}
+.mk-ok {
+  text-decoration-style: solid;
+  text-decoration-color: var(--ok);
+}
+.mk-almost {
+  text-decoration-style: dotted;
+  text-decoration-color: var(--almost);
+}
+.mk-work {
+  text-decoration-style: wavy;
+  text-decoration-color: var(--work);
+  text-decoration-thickness: 2.5px;
+}
+
+/* Tap-to-talk Mic button & coral ripple */
+.mic-btn {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-float);
+  transition: background-color 200ms var(--ease-out), transform 220ms var(--ease-spring);
+}
+.mic-btn:hover {
+  transform: scale(1.04);
+}
+.mic-btn:active {
+  transform: scale(0.95);
+}
+.mic-btn[data-state="recording"] {
+  background: var(--coral);
+  color: var(--on-coral);
+}
+.mic-btn[data-state="recording"]::before,
+.mic-btn[data-state="recording"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid var(--coral);
+  animation: mic-ripple 1.6s var(--ease-out) infinite;
+}
+.mic-btn[data-state="recording"]::after {
+  animation-delay: 0.8s;
+}
+@keyframes mic-ripple {
+  from {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 1ms !important;
+    animation: none !important;
+  }
+}

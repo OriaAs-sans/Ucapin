@@ -1,77 +1,88 @@
 # Architecture — Ucapin
 
-> Status: **usulan** dari riset (lihat `reports/`). Belum ada kode. Setiap keputusan bertanda ❓ perlu didiskusikan dengan pengguna sebelum dikunci.
+> Status: **Aktif (Next.js Fullstack + shadcn/ui + Prisma ORM + Laragon PostgreSQL `127.0.0.1:5432`)**, dikonfirmasi pengguna pada 2026-11-20.
 
 ## 1. Tahapan produk
 | Tahap | Isi | AI yang dipakai |
 |---|---|---|
-| **MVP** | Pronunciation Drill, Shadowing (rekam & bandingkan), **Roleplay berskrip** (dialog bercabang, audio pra-rekam/TTS cache), Mistake Bank otomatis dari skor fonem, Session Result, onboarding, streak/target harian | Hanya **penilaian pengucapan** (Azure). Tanpa LLM. |
+| **MVP (Aktif)** | Pronunciation Drill, Shadowing (rekam & bandingkan), **Roleplay berskrip** (dialog bercabang, audio TTS), Mistake Bank otomatis dari skor fonem ke PostgreSQL Laragon, Session Result, onboarding, streak/target harian | Hanya **penilaian pengucapan** (Azure / simulasi terstruktur). Tanpa LLM. |
 | **v1.5** | AI Roleplay bebas (turn-based STT → LLM → TTS), Speaking Test gaya IELTS | + STT, LLM, TTS |
 | **v2** | Percakapan real-time (full duplex), aplikasi mobile | + LiveKit + model speech-to-speech |
 
-❓ Konfirmasi: MVP tanpa LLM seperti di atas?
-
-## 2. Stack
-| Lapisan | Pilihan | Catatan |
+## 2. Stack Produksi & Lokal (Laragon)
+| Lapisan | Pilihan yang Dipakai | Catatan |
 |---|---|---|
-| Frontend | **Next.js (App Router) + TypeScript** | ❓ styling: Tailwind CSS dengan token dari design.md |
-| Audio di browser | `getUserMedia` + `MediaRecorder`, waveform via Web Audio `AnalyserNode` | Jangan pakai Web Speech API untuk penilaian (mengoreksi otomatis kesalahan pelajar, dukungan browser tidak merata) |
-| Penilaian ucapan | **Azure AI Speech – Pronunciation Assessment** (en-US, granularitas fonem, IPA) | ~US$1/jam audio, free tier 5 jam/bulan. Prosody/skor konten hanya en-US |
-| STT percakapan (v1.5) | gpt-4o-mini-transcribe atau Deepgram Nova-3 | ~US$0,003–0,005/menit |
-| LLM tutor (v1.5) | Claude Haiku (default) / Sonnet, dengan prompt caching | Persona per skenario, keluaran terstruktur (balasan + koreksi + status misi) |
-| TTS | Azure Neural TTS; audio pelajaran statis di-cache di CDN | Kecepatan lambat (0.7×) dilakukan di browser (playbackRate) |
-| Backend | Next.js Route Handlers / server actions | ❓ atau backend terpisah |
-| Database & auth | ❓ Postgres (mis. Supabase: auth + DB + storage) | |
-| Storage audio | Hanya jika pengguna opt-in, dengan TTL | |
-| Hosting | ❓ Vercel / sejenis | |
+| Frontend | **Next.js 15 (App Router) + React 19 + TypeScript** | Styling dengan Tailwind CSS + CSS Variables dari `design.md` |
+| UI Component System | **shadcn/ui** (`src/components/ui/`) + **Reusable Domain Components** (`src/components/shared/`) | Semua komponen domain wajib modular dan reusable lintas halaman |
+| Backend API | **Next.js Route Handlers (`/api/v1/*`) + Repository Layer (`src/server/repositories/`)** | Satu codebase TypeScript end-to-end |
+| Database Lokal | **Laragon PostgreSQL 14.5 (`127.0.0.1:5432`, database `ucapin`)** via **Prisma ORM** | Skema di `prisma/schema.prisma`, seed di `prisma/seed.ts` |
+| Audio di browser | `getUserMedia` + Web Audio `AnalyserNode` (`<MicRecorder />`) | Jangan pakai Web Speech API untuk penilaian karena mengoreksi otomatis kesalahan pelajar |
+| Penilaian ucapan | **Azure AI Speech – Pronunciation Assessment** (en-US, granularitas fonem, IPA) | ~US$1/jam audio, free tier 5 jam/bulan |
+| TTS | Browser `speechSynthesis` (`en-US`, normal 1.0x & pelan 0.7x di `<AudioTtsButton />`) / Azure Neural TTS | |
 
-## 3. Alur sistem
-### Pronunciation Drill (MVP)
-1. Browser minta **token Azure jangka pendek** dari backend (`/api/speech-token`); key Azure tidak pernah ke browser.
-2. Azure Speech JS SDK merekam & mengirim audio dengan teks acuan (scripted assessment).
-3. Hasil: Accuracy, Fluency, Completeness, (Prosody), miscue per kata, skor per fonem.
-4. Backend menyimpan **ringkasan** (bukan audio): skor per kata/fonem → aturan Mistake Bank.
+## 3. Struktur Folder Baku
+```text
+c:\My things\Project\Ucapin\
+├── prisma/
+│   ├── schema.prisma               # Skema PostgreSQL Laragon (User, DrillSentence, Scenario, ScenarioNode, SpeakingSession, Utterance, PhonemeScore, MistakeItem, DailyActivity, LeagueEntry)
+│   └── seed.ts                     # Seeder data awal ke Laragon PostgreSQL
+├── public/
+│   ├── fonts/                      # Self-hosted WOFF2 (Bricolage Grotesque, Atkinson Hyperlegible Next, Charis SIL)
+│   └── icons.svg                   # Sprite SVG untuk prototipe
+├── src/
+│   ├── app/                        # Next.js App Router (HANYA routing & API endpoints)
+│   │   ├── api/v1/
+│   │   │   ├── dashboard/route.ts  # GET data Beranda dari PostgreSQL
+│   │   │   ├── mistakes/route.ts   # GET & POST item Bank Kesalahan (auto-upsert)
+│   │   │   ├── onboarding/route.ts # PATCH tujuan, CEFR, target menit, koreksi, opt-in UU PDP
+│   │   │   └── session-result/route.ts # POST rating kepercayaan diri 1-5
+│   │   ├── bank-kesalahan/page.tsx # Halaman penuh Bank Kesalahan
+│   │   ├── cek-mikrofon/page.tsx   # Onboarding tes izin & level mikrofon
+│   │   ├── hasil/page.tsx          # Hasil Sesi (Session Result)
+│   │   ├── latihan-ucapan/page.tsx # Pronunciation Drill
+│   │   ├── mulai/page.tsx          # Onboarding tujuan & level CEFR
+│   │   ├── roleplay/page.tsx       # Scripted Roleplay (Memesan di kafe)
+│   │   ├── globals.css             # CSS Variables tema terang/gelap & @font-face
+│   │   ├── layout.tsx              # Root layout Bahasa Indonesia (lang="id")
+│   │   └── page.tsx                # Beranda (Dashboard)
+│   ├── components/
+│   │   ├── ui/                     # Primitif shadcn/ui (button, card, badge, progress, switch, separator)
+│   │   ├── layout/                 # Kerangka halaman (app-shell, sidebar-nav, theme-toggle)
+│   │   └── shared/                 # Komponen domain reusable (bisa dipakai di mana saja):
+│   │       ├── audio-tts-button.tsx       # Tombol putar suara normal 1.0x & pelan 0.7x
+│   │       ├── clarity-ring.tsx           # Ring SVG skor Kejelasan
+│   │       ├── mic-recorder.tsx           # Tap-to-talk + AnalyserNode waveform + 5 state error mic
+│   │       ├── phonetic-specimen-card.tsx # Kartu spesimen catatan fonetik harian + tally menit
+│   │       ├── phonetic-word-row.tsx      # Baris kata + IPA + audio + status badge
+│   │       ├── proofreading-sentence.tsx  # Kalimat latihan + garis bawah koreksi + anotasi interlinear lurus
+│   │       └── score-metric-card.tsx      # Kartu skor + meterbar semantik
+│   ├── features/                   # Workspace & state interaksi per fitur
+│   │   ├── dashboard/dashboard-workspace.tsx
+│   │   ├── drill/drill-workspace.tsx
+│   │   ├── mistake-bank/mistake-bank-workspace.tsx
+│   │   ├── onboarding/onboarding-goal-form.tsx
+│   │   ├── onboarding/mic-check-workspace.tsx
+│   │   ├── roleplay/roleplay-workspace.tsx
+│   │   └── session-result/session-result-workspace.tsx
+│   ├── lib/utils.ts                # Helper cn(), speakEnglish(), mapMicError()
+│   ├── server/
+│   │   ├── db.ts                   # Singleton PrismaClient
+│   │   └── repositories/ucapin-repository.ts # Query & mutasi terpusat ke Laragon PostgreSQL
+│   └── types/ucapin.ts             # Kontrak DTO TypeScript
+└── prototype/                      # Prototipe statis HTML/CSS/JS awal
+```
 
-### Mistake Bank
-- Aturan deteksi: fonem target (mis. /v/, /θ/, /ð/, /ʃ/, konsonan akhir) dengan skor < ambang (❓ mis. 60) → buat/naikkan item `{kata, fonem, contoh salah, sumber sesi}`.
-- Penjadwalan ulang: spaced repetition sederhana (mis. 1 → 3 → 7 → 14 hari); item "dikuasai" setelah N kali lulus berturut-turut.
-- Drill dibuat dari: kata itu sendiri, minimal pairs (very/fery), kalimat pendek berisi fonem yang sama.
-
-### Roleplay berskrip (MVP)
-- Skenario = graf dialog (node AI → pilihan/kalimat target pengguna → node berikutnya), 3 misi per skenario.
-- Ucapan pengguna dinilai Azure terhadap kalimat target terdekat; kesalahan masuk Mistake Bank.
-
-### AI Roleplay bebas (v1.5)
-Rekam (tap-to-talk) → STT → LLM (persona + misi + level CEFR) → koreksi dalam bentuk *prompt* → TTS balasan. Giliran pengguna juga dinilai Azure (transkrip dipakai sebagai teks acuan) untuk mengisi Mistake Bank.
-
-## 4. Model data (sketsa)
-- `users` (level CEFR, tujuan, target menit harian, preferensi koreksi, opt-in simpan audio, persetujuan & tanggal)
-- `sessions` (mode, skenario, durasi bicara, skor agregat, mulai/selesai)
-- `utterances` (sesi, teks acuan, transkrip, skor, `audio_url` nullable)
-- `phoneme_scores` (utterance, kata, fonem, skor)
-- `mistakes` (user, kata, fonem, jenis, jumlah_muncul, next_review_at, status)
-- `streaks` / `daily_goals` (tanggal, menit, freeze terpakai)
-- `scenarios`, `scenario_nodes` (konten roleplay)
+## 4. Alur sistem & Closed Loop Bank Kesalahan
+1. **Pronunciation Drill (`/latihan-ucapan`)**:
+   - Server mengambil daftar kalimat dari tabel `DrillSentence` di PostgreSQL Laragon.
+   - Pengguna merekam suara dengan `<MicRecorder />` dan melihat hasil koreksi naskah pada `<ProofreadingSentence />`.
+   - Kata dengan status `work` (mis. `very` `/v/ → /f/` atau `Thank` `/θ/ → /t/`) otomatis dikirim ke `POST /api/v1/mistakes` dan di-upsert ke tabel `MistakeItem` di PostgreSQL Laragon.
+2. **Roleplay Berskrip (`/roleplay`)**:
+   - Server mengambil skenario & node dialog dari tabel `Scenario` dan `ScenarioNode`.
+   - Saat giliran pengguna memicu koreksi fonem (mis. konsonan akhir `/d/` pada `card`), sistem mengirim `POST /api/v1/mistakes` sehingga kata tersebut langsung bertambah di `MistakeItem`.
+3. **Bank Kesalahan (`/bank-kesalahan` & kartu di `/`)**:
+   - Menampilkan seluruh kata yang tersimpan di tabel `MistakeItem` diurutkan berdasarkan frekuensi kemunculan (`occurrenceCount`), lengkap dengan filter status dan tombol latihan ulang.
 
 ## 5. Privasi & kepatuhan (UU PDP 27/2022)
-- Rekaman suara = data pribadi; data anak = data spesifik → **persetujuan eksplisit tercatat**, alur persetujuan orang tua untuk pengguna di bawah umur.
-- Default: audio **tidak disimpan** (diproses lalu dibuang); simpan hanya jika opt-in, dengan masa simpan terbatas.
-- Transfer ke luar negeri (Azure/OpenAI/Anthropic) → minta persetujuan pengguna, sebutkan di kebijakan privasi.
-- Siapkan DPIA dan prosedur notifikasi kebocoran 72 jam. Status PP 33/2026 ❓ perlu konfirmasi konsultan hukum.
-- Jangan pakai free tier Gemini untuk data pengguna nyata.
-
-## 6. Biaya (estimasi, perlu diukur di prototipe)
-Asumsi 200 menit latihan/pengguna aktif/bulan:
-| Konfigurasi | ~US$/pengguna/bulan |
-|---|---|
-| MVP (hanya Azure pronunciation, TTS di-cache) | < 1 (perkiraan, belum dihitung rinci) |
-| Turn-based STT→LLM→TTS | ~2,5 |
-| + penilaian Azure tiap giliran | ~3,7 |
-| Real-time speech-to-speech | 2,6–15 |
-
-Harga langganan Rp 50–100 ribu → margin tipis untuk v1.5; perlu batas menit harian per paket.
-
-## 7. Risiko terbuka
-- Belum ada benchmark akurasi ASR untuk aksen Indonesia → uji 20–50 klip pelajar asli sebelum mengunci vendor.
-- Belum terbukti rasa percaya diri dari latihan AI terbawa ke percakapan dengan manusia.
-- Kemauan bayar pelajar Indonesia belum diteliti.
+- Rekaman suara = data pribadi. Default `saveAudioOptIn = false` di tabel `User`: audio diproses di memori dan tidak disimpan.
+- Pengguna dapat mengubah preferensi `saveAudioOptIn` dan `correctionPref` (`giliran` vs `akhir`) di `/cek-mikrofon`, yang langsung disimpan ke tabel `User` lewat `PATCH /api/v1/onboarding`.

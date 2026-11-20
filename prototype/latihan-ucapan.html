@@ -46,21 +46,29 @@
         </div>
       </header>
 
-      <article class="card" style="padding:32px;text-align:center" aria-labelledby="sentence-label">
-        <h2 id="sentence-label" style="font-size:1rem;color:var(--text-2);font-family:var(--font-ui)">Baca kalimat ini dengan suara keras</h2>
-        <p class="sentence" id="sentence" lang="en" style="justify-content:center;margin-top:8px"></p>
-        <p class="ipa-line" id="ipa" lang="en" hidden style="margin-top:14px"></p>
-        <p class="translation" id="arti" hidden style="margin-top:14px"></p>
-        <div class="btn-row" style="justify-content:center;margin-top:22px">
-          <button class="btn" type="button" data-say-sentence data-say=""><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Dengar</button>
-          <button class="btn" type="button" data-say-sentence data-say="" data-rate="0.7"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#slow"/></svg>Pelan 0,7×</button>
-          <button class="btn" type="button" data-toggle="ipa" aria-pressed="false" aria-expanded="false">IPA</button>
-          <button class="btn" type="button" data-toggle="arti" aria-pressed="false" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#translate"/></svg>Arti</button>
+      <article class="card sentence-card" style="padding:0;overflow:hidden" aria-labelledby="sentence-label">
+        <div class="sentence-head">
+          <h2 id="sentence-label" style="font-size:.95rem;color:var(--text);font-family:var(--font-ui)">Baca kalimat ini dengan suara keras</h2>
+          <div class="sentence-toggles" role="group" aria-label="Tampilan bantuan teks">
+            <button class="btn btn-sm" type="button" data-toggle="ipa" aria-pressed="false" aria-expanded="false"><span class="ipa">/aɪ/</span> IPA</button>
+            <button class="btn btn-sm" type="button" data-toggle="arti" aria-pressed="false" aria-expanded="false"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#translate"/></svg>Arti</button>
+          </div>
         </div>
-        <div class="legend" style="justify-content:center;margin-top:18px" aria-label="Arti tanda">
-          <span><span class="mk mk-ok">jelas</span> garis lurus</span>
-          <span><span class="mk mk-almost">hampir</span> garis titik</span>
-          <span><span class="mk mk-work">ulang</span> garis gelombang</span>
+        <div style="padding:32px;text-align:center">
+          <p class="sentence" id="sentence" lang="en" style="justify-content:center;margin-top:0"></p>
+          <p class="ipa-line" id="ipa" lang="en" hidden style="margin-top:18px"></p>
+          <p class="translation" id="arti" hidden style="margin-top:14px"></p>
+        </div>
+        <div class="sentence-foot">
+          <div class="btn-row">
+            <button class="btn btn-sm" type="button" data-say-sentence data-say=""><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Dengar contoh</button>
+            <button class="btn btn-sm" type="button" data-say-sentence data-say="" data-rate="0.7"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#slow"/></svg>Pelan 0,7×</button>
+          </div>
+          <div class="legend" aria-label="Arti tanda">
+            <span><span class="mk mk-ok">jelas</span> garis lurus</span>
+            <span><span class="mk mk-almost">hampir</span> garis titik</span>
+            <span><span class="mk mk-work">ulang</span> garis gelombang</span>
+          </div>
         </div>
       </article>
 

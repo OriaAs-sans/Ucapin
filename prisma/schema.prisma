@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String            @id @default(cuid())
+  name               String
+  initials           String
+  cefrLevel          String            @default("B1")
+  cefrProgressLabel  String            @default("A2+ menuju B1")
+  cefrProgressPct    Int               @default(70)
+  goals              String[]          @default(["kerja", "harian"])
+  dailyTargetMinutes Int               @default(15)
+  spokenTodayMinutes Int               @default(9)
+  totalSpokenMinutes Int               @default(186)
+  clarityAvg         Int               @default(82)
+  streakDays         Int               @default(12)
+  streakFreezes      Int               @default(2)
+  correctionPref     String            @default("giliran")
+  saveAudioOptIn     Boolean           @default(false)
+  consentDate        DateTime          @default(now())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  sessions           SpeakingSession[]
+  mistakes           MistakeItem[]
+  dailyActivities    DailyActivity[]
+}
+
+model DrillSentence {
+  id                   String   @id @default(cuid())
+  category             String
+  focusPhonemes        String
+  text                 String
+  ipa                  String
+  translation          String
+  orderIndex           Int
+  targetMarksJson      String
+  sampleScoresJson     String
+  coachWord            String
+  coachIpa             String
+  coachNote            String
+  coachStepsJson       String
+  phonemeBreakdownJson String
+  minimalPairsJson     String
+}
+
+model Scenario {
+  id                String         @id @default(cuid())
+  slug              String         @unique
+  title             String
+  category          String
+  cefrLevel         String
+  characterName     String
+  characterRole     String
+  characterTrait    String
+  description       String
+  missionsJson      String
+  usefulPhrasesJson String
+  nodes             ScenarioNode[]
+}
+
+model ScenarioNode {
+  id                   String   @id @default(cuid())
+  scenarioId           String
+  scenario             Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  stepIndex            Int
+  speaker              String
+  speakerLine          String
+  translation          String
+  hintsJson            String
+  targetMission        Int
+  sampleCorrectionJson String?
+}
+
+model SpeakingSession {
+  id                 String      @id @default(cuid())
+  userId             String
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode               String
+  scenarioTitle      String?
+  durationSec        Int
+  clarityScore       Int
+  pronunciationScore Int
+  fluencyScore       Int
+  grammarScore       Int
+  vocabularyScore    Int
+  wpm                Int         @default(118)
+  confidenceRating   Int?
+  startedAt          DateTime    @default(now())
+  endedAt            DateTime    @default(now())
+  utterances         Utterance[]
+}
+
+model Utterance {
+  id            String          @id @default(cuid())
+  sessionId     String
+  session       SpeakingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  referenceText String
+  transcript    String
+  betterVersion String?
+  status        String
+  note          String?
+  clarityScore  Int
+  audioUrl      String?
+  phonemeScores PhonemeScore[]
+}
+
+model PhonemeScore {
+  id           String    @id @default(cuid())
+  utteranceId  String
+  utterance    Utterance @relation(fields: [utteranceId], references: [id], onDelete: Cascade)
+  word         String
+  phoneme      String
+  score        Int
+  errorPattern String?
+}
+
+model MistakeItem {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word            String
+  ipa             String
+  phoneme         String
+  errorPattern    String
+  heardAs         String
+  sourceMode      String
+  occurrenceCount Int      @default(1)
+  status          String   @default("work")
+  scheduleLabel   String   @default("hari ini")
+  nextReviewAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, word])
+}
+
+model DailyActivity {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayOrder      Int
+  dayLabel      String
+  minutesSpoken Int
+  isToday       Boolean  @default(false)
+}
+
+model LeagueEntry {
+  id            String  @id @default(cuid())
+  rank          Int
+  name          String
+  initials      String
+  minutesSpoken Int
+  isCurrentUser Boolean @default(false)
+}

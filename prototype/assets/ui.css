@@ -58,8 +58,20 @@
 .topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-4); }
 .topbar p { color: var(--text-2); margin-top: 4px; }
 
-/* hero banner */
-.hero { background: var(--hero-bg); color: var(--hero-fg); border-radius: 28px; padding: var(--s-6); display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--s-5); align-items: center; position: relative; overflow: hidden; }
+/* hero banner & editorial phonetic specimen card */
+.hero { background: var(--hero-bg); color: var(--hero-fg); border-radius: 28px; padding: var(--s-6); display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: var(--s-5); align-items: center; position: relative; overflow: hidden; }
+.specimen-card { border-radius: 18px; border: 1.5px solid rgba(212, 200, 183, 0.32); background: rgba(19, 41, 46, 0.55); padding: 16px; color: #F7F5EE; display: grid; gap: 10px; }
+.specimen-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(212, 200, 183, 0.22); font-size: 0.75rem; font-weight: 700; color: #D4C8B7; }
+.specimen-tag { background: rgba(242, 147, 124, 0.18); color: #F2937C; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+.specimen-body { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.specimen-word { font: 800 1.85rem/1.1 var(--font-display); color: #F7F5EE; }
+.specimen-word small { font: 400 0.95rem var(--font-ipa); color: #D4C8B7; margin-left: 6px; }
+.specimen-sub { font-size: 0.78rem; color: #D4C8B7; margin-top: 4px; }
+.specimen-audio { background: transparent; border-color: rgba(247, 245, 238, 0.35); color: #F7F5EE; width: 36px; height: 36px; }
+.specimen-tip { font-size: 0.78rem; color: #E8E5D7; background: rgba(247, 245, 238, 0.06); border: 1px solid rgba(212, 200, 183, 0.18); border-radius: 10px; padding: 8px 10px; }
+.specimen-tally { display: grid; grid-template-columns: repeat(15, 1fr); gap: 3px; }
+.specimen-tally i { height: 10px; border-radius: 3px; background: rgba(247, 245, 238, 0.1); border: 1px solid rgba(212, 200, 183, 0.25); }
+.specimen-tally i.on { background: var(--coral); border-color: var(--coral); }
 .hero h1, .hero h2 { color: var(--hero-fg); }
 .hero p { color: var(--hero-fg-2); }
 .hero .bar { height: 10px; border-radius: 5px; background: rgba(247, 245, 238, 0.18); overflow: hidden; max-width: 340px; flex: 1; }

@@ -1,0 +1,102 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Home, Mic, MessageSquare, BookOpen } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { href: "/", label: "Beranda", icon: Home },
+  { href: "/latihan-ucapan", label: "Latihan Ucapan", icon: Mic },
+  { href: "/roleplay", label: "Roleplay", icon: MessageSquare },
+  { href: "/bank-kesalahan", label: "Bank Kesalahan", icon: BookOpen },
+];
+
+export function SidebarNav() {
+  const pathname = usePathname();
+
+  return (
+    <aside
+      aria-label="Navigasi utama"
+      className="flex flex-col justify-between gap-6 bg-[var(--side-bg)] px-4 py-6 text-[var(--side-text)] lg:sticky lg:top-0 lg:h-screen"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 lg:flex-col lg:items-stretch lg:gap-8">
+        <Link
+          href="/"
+          className="block px-3 text-[#F7F5EE] no-underline"
+        >
+          <span className="font-display text-[1.75rem] font-extrabold leading-none tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
+            Ucapin
+          </span>
+          <span
+            aria-hidden="true"
+            className="mt-1 hidden font-ipa text-sm text-[var(--side-text-2)] lg:block"
+          >
+            /ʊˈtʃapɪn/
+          </span>
+        </Link>
+
+        <nav className="flex w-full gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex min-h-[46px] items-center gap-3 whitespace-nowrap rounded-control px-4 font-semibold no-underline transition-all",
+                  isActive
+                    ? "bg-[var(--side-active)] font-bold text-[#F7F5EE]"
+                    : "text-[var(--side-text)] hover:translate-x-0.5 hover:bg-[rgba(232,229,215,0.08)]"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5 shrink-0",
+                    isActive && "text-[var(--coral)]"
+                  )}
+                  aria-hidden="true"
+                />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+
+          <div className="mt-4 hidden px-4 pb-1 text-xs font-semibold text-[var(--side-text-2)] lg:block">
+            Segera hadir
+          </div>
+          <span className="hidden min-h-[42px] items-center justify-between px-4 text-sm font-semibold text-[var(--side-text-2)] lg:flex">
+            <span>Shadowing</span>
+            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[11px]">
+              Segera
+            </small>
+          </span>
+          <span className="hidden min-h-[42px] items-center justify-between px-4 text-sm font-semibold text-[var(--side-text-2)] lg:flex">
+            <span>Speaking Test</span>
+            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[11px]">
+              Segera
+            </small>
+          </span>
+        </nav>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 px-3 text-sm lg:grid lg:justify-start">
+        <ThemeToggle />
+        <Link
+          href="/mulai"
+          className="hidden text-sm text-[var(--side-text)] underline underline-offset-4 lg:inline-block"
+        >
+          Atur ulang tujuan belajar
+        </Link>
+      </div>
+    </aside>
+  );
+}

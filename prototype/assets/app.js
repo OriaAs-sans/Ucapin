@@ -197,9 +197,8 @@
           if (m) {
             const note = document.createElement("span");
             note.className = "word-note sticker status-" + kind;
-            note.style.transform = `rotate(${i % 2 ? 3 : -4}deg)`;
             note.innerHTML = `<svg class="icon" aria-hidden="true"><use href="assets/icons.svg#${kind === "work" ? "cross" : "again"}"/></svg>`;
-            note.appendChild(document.createTextNode((kind === "work" ? "Ulang yuk · " : "Hampir! · ") + m[1]));
+            note.appendChild(document.createTextNode((kind === "work" ? "Ulang · " : "Hampir · ") + m[1]));
             el.appendChild(note);
           }
         }, i * 70);
