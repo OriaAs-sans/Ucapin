@@ -38,7 +38,11 @@ Jika kode/desain menyimpang dari dokumen ini, **diskusikan** dulu: perbarui doku
 - Jangan pernah menulis API key/secret ke file yang ter-track git. Pakai `.env.local` (sudah di-ignore) dan sediakan `.env.example` tanpa nilai asli.
 - Rekaman suara pengguna adalah data pribadi (UU PDP). Default: tidak disimpan; hanya disimpan jika pengguna opt-in. Lihat architecture.md § Privasi.
 
-## 7. Skill desain yang tersedia
+## 7. Antislop wajib
+- Setiap mengerjakan atau mengecek **UI, desain Figma, kode frontend, copy antarmuka, atau komentar kode**: muat skill `anthropic-skills:antislop` lebih dulu.
+- Jalankan Delivery Gate (PASS/FAIL) dari skill itu sebelum melaporkan pekerjaan selesai. Hasil FAIL diperbaiki dulu, bukan dilaporkan sebagai selesai.
+
+## 8. Skill desain yang tersedia
 - `impeccable` — critique, audit, polish, DESIGN.md (`/impeccable ...`). Hook detektornya **tidak** dipasang.
 - `design-taste-frontend` (taste-skill) — standar anti-"AI slop" untuk halaman marketing/landing. Untuk UI aplikasi (dashboard, latihan), utamakan design.md.
 - `references/awesome-design-md/` — 84 contoh DESIGN.md dari brand terkenal, hanya sebagai referensi gaya (tidak di-commit).

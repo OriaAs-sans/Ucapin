@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="id" data-type="software">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var q=new URLSearchParams(location.search).get("theme"),t=q||localStorage.getItem("ucapin-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <title>Roleplay: memesan di kafe · Ucapin</title>
+  <meta name="description" content="Latihan percakapan berskenario: memesan minuman di kafe dalam bahasa Inggris.">
+  <meta name="page-type" content="software"><meta name="site-kind" content="software">
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/ui.css">
+</head>
+<body data-page="roleplay">
+<a class="skip" href="#main">Langsung ke konten</a>
+<div class="app has-panel">
+  <aside class="side" aria-label="Navigasi utama">
+    <a class="brand" href="index.html"><span class="brand-word">Ucapin</span><span class="brand-ipa" aria-hidden="true">/ʊˈtʃapɪn/</span></a>
+    <nav class="nav">
+      <a href="index.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#home"/></svg>Beranda</a>
+      <a href="latihan-ucapan.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg>Latihan Ucapan</a>
+      <a href="roleplay.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg>Roleplay</a>
+      <a href="index.html#bank"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#book"/></svg>Bank Kesalahan</a>
+      <div class="nav-group">Segera hadir</div>
+      <span class="soon">Shadowing</span>
+      <span class="soon">Speaking Test</span>
+    </nav>
+    <div class="side-foot">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#moon"/></svg><span>Mode gelap</span></button>
+      <a href="mulai.html">Atur ulang tujuan belajar</a>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <p class="proto-note">Prototype: dialog berskrip (tanpa AI). Koreksi pada giliran pembayaran adalah contoh.</p>
+    <div class="stack" style="gap:20px">
+      <header class="topbar" style="flex-wrap:nowrap">
+        <a class="icon-btn" href="index.html" aria-label="Kembali ke Beranda"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#back"/></svg></a>
+        <span class="tile t-coral"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg></span>
+        <div style="flex:1;min-width:0">
+          <p class="meta" style="margin:0">Roleplay · sehari-hari</p>
+          <h1 style="font-size:1.6rem">Memesan di kafe</h1>
+        </div>
+        <span class="chip chip-teal">A2 · Dasar</span>
+        <span class="chip chip-ghost" style="font-size:.9rem"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#clock"/></svg><span id="timer" aria-label="Lama sesi">03:12</span></span>
+        <a class="btn" href="hasil.html" style="min-height:42px">Akhiri</a>
+      </header>
+
+      <section class="card" aria-labelledby="chat-title" style="padding:24px 28px">
+        <h2 id="chat-title" class="sr-only">Percakapan</h2>
+        <div class="card-head" style="align-items:center;padding-bottom:16px;border-bottom:1.5px solid var(--line)">
+          <span class="avatar avatar-sm avatar-teal" style="width:44px;height:44px" aria-hidden="true">S</span>
+          <div style="flex:1;min-width:0">
+            <p style="font-weight:700">Sam, barista di Bean Corner <span class="meta">(karakter)</span></p>
+            <p class="meta" style="display:flex;gap:6px;align-items:center"><span style="width:8px;height:8px;border-radius:50%;background:var(--ok)"></span>Ramah · bicara pelan · aksen US</p>
+          </div>
+          <span class="chip chip-green">Koreksi: tiap giliran</span>
+        </div>
+        <div class="chat" id="chat" aria-live="polite" style="margin-top:20px">
+          <div class="turn turn-char">
+            <div class="who">Sam</div>
+            <p class="line" lang="en">Hi there! Welcome to Bean Corner. What can I get for you today?</p>
+            <div class="tools">
+              <button class="tool" type="button" data-say="Hi there! Welcome to Bean Corner. What can I get for you today?"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Putar</button>
+              <button class="tool" type="button" data-rate="0.7" data-say="Hi there! Welcome to Bean Corner. What can I get for you today?"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#slow"/></svg>Pelan</button>
+              <button class="tool" type="button" aria-pressed="false" aria-expanded="false" data-toggle="tr-0"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#translate"/></svg>Arti</button>
+            </div>
+            <p class="tr" id="tr-0" hidden>Halo! Selamat datang di Bean Corner. Mau pesan apa hari ini?</p>
+          </div>
+          <div class="turn turn-me">
+            <div class="who">Kamu</div>
+            <p class="line" lang="en">I want a ice latte, medium size.</p>
+            <div class="alert alert-warn correction">
+              <h3><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#again"/></svg>Hampir! Ada 2 hal kecil, coba ucapkan lagi.</h3>
+              <div class="btn-row"><span class="chip chip-ochre" lang="en">a → an</span><span class="chip chip-ochre" lang="en">ice → iced</span><span class="chip chip-teal">lebih sopan</span></div>
+            </div>
+          </div>
+          <div class="turn turn-me">
+            <div class="who">Kamu, percobaan kedua</div>
+            <p class="line" lang="en">Could I get an iced latte, medium, please?</p>
+            <p class="status status-ok" style="margin:8px 0 0 auto"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#check"/></svg>Natural dan sopan</p>
+          </div>
+          <div class="turn turn-char">
+            <div class="who">Sam</div>
+            <p class="line" lang="en">Sure! Anything to eat with that? Our croissants just came out of the oven.</p>
+            <div class="tools">
+              <button class="tool" type="button" data-say="Sure! Anything to eat with that? Our croissants just came out of the oven."><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Putar</button>
+              <button class="tool" type="button" data-rate="0.7" data-say="Sure! Anything to eat with that? Our croissants just came out of the oven."><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#slow"/></svg>Pelan</button>
+              <button class="tool" type="button" aria-pressed="false" aria-expanded="false" data-toggle="tr-1"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#translate"/></svg>Arti</button>
+            </div>
+            <p class="tr" id="tr-1" hidden>Tentu! Mau makan sesuatu juga? Croissant kami baru keluar dari oven.</p>
+          </div>
+        </div>
+
+        <div style="margin-top:24px">
+          <p class="muted" style="margin-bottom:8px;font-size:.9rem">Bingung? Pilih petunjuk, lalu tetap ucapkan sendiri.</p>
+          <div class="hints" id="hints"></div>
+        </div>
+
+        <div class="alert alert-error" id="rp-error" role="alert" hidden style="margin-top:20px">
+          <h3><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#cross"/></svg><span id="rp-error-title"></span></h3>
+          <p id="rp-error-body"></p>
+          <div class="btn-row"><a class="btn" href="cek-mikrofon.html">Buka cek mikrofon</a></div>
+        </div>
+        <div class="alert alert-ok" id="rp-done" hidden style="margin-top:20px">
+          <h3><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#check"/></svg>Semua misi beres!</h3>
+          <p>Lihat ringkasan sesi dan kata yang masuk Bank Kesalahan.</p>
+          <div class="btn-row"><a class="btn btn-accent" href="hasil.html">Lihat hasil sesi</a></div>
+        </div>
+      </section>
+
+      <section class="card composer" aria-label="Jawab dengan suara" style="border-top:0;padding:16px 24px">
+        <button class="mic" id="rp-mic" type="button" data-state="idle" aria-label="Ketuk untuk menjawab"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg></button>
+        <div style="min-width:0">
+          <p style="font:700 1.05rem var(--font-display)" id="rp-mic-label" aria-live="polite">Ketuk untuk menjawab</p>
+          <div class="levels" id="rp-levels" aria-hidden="true" style="height:32px"></div>
+        </div>
+        <button class="btn btn-quiet" type="button" id="rp-simulate">Jawab tanpa mikrofon</button>
+      </section>
+    </div>
+  </main>
+
+  <aside class="panel" aria-label="Misi dan bantuan">
+    <div class="scene" style="display:grid;justify-items:center;text-align:center;gap:8px">
+      <svg viewBox="0 0 120 80" width="132" role="img" aria-label="Ilustrasi secangkir kopi">
+        <ellipse cx="54" cy="70" rx="40" ry="6" fill="#D4C8B7"/>
+        <path d="M22 30h64v18a26 26 0 0 1-26 26h-12a26 26 0 0 1-26-26z" fill="#F7F5EE" stroke="#1E3E45" stroke-width="3"/>
+        <path d="M86 36h6a10 10 0 0 1 0 20h-8" fill="none" stroke="#1E3E45" stroke-width="3"/>
+        <path d="M30 30h48" stroke="#B5523B" stroke-width="6" stroke-linecap="round"/>
+        <path d="M42 8c-4 6 4 8 0 14M56 6c-4 6 4 8 0 14M70 8c-4 6 4 8 0 14" stroke="#3B6A78" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <p style="font-size:.92rem">Kamu pelanggan di kafe yang ramai. Pesan minuman, tambah camilan, lalu bayar.</p>
+    </div>
+    <section>
+      <h2 style="font-size:1.15rem">Misimu</h2>
+      <div style="margin-top:10px">
+        <div class="mission done"><span class="n"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#check"/></svg></span><span>Pesan satu minuman</span></div>
+        <div class="mission current"><span class="n">2</span><span>Tambah makanan</span></div>
+        <div class="mission"><span class="n">3</span><span>Bayar dan pamit</span></div>
+      </div>
+    </section>
+    <section>
+      <h2 style="font-size:1.15rem">Frasa berguna</h2>
+      <div style="margin-top:10px">
+        <div class="item"><button class="icon-btn" type="button" data-say="to go" aria-label="Dengar: to go"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button><div class="grow"><p class="phrase" lang="en">to go</p><p class="sub">dibawa pulang</p></div></div>
+        <div class="item"><button class="icon-btn" type="button" data-say="for here" aria-label="Dengar: for here"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button><div class="grow"><p class="phrase" lang="en">for here</p><p class="sub">makan di sini</p></div></div>
+        <div class="item"><button class="icon-btn" type="button" data-say="Can I pay by card?" aria-label="Dengar: Can I pay by card?"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button><div class="grow"><p class="phrase" lang="en">Can I pay by card?</p><p class="sub">Bisa bayar pakai kartu?</p></div></div>
+      </div>
+    </section>
+    <fieldset>
+      <legend style="font-size:1.05rem">Kapan kamu mau dikoreksi?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="koreksi" value="giliran" checked><span>Setiap giliran<small>Belajar lebih cepat</small></span></label>
+        <label class="choice"><input type="radio" name="koreksi" value="akhir"><span>Di akhir sesi<small>Lebih santai saat bicara</small></span></label>
+      </div>
+    </fieldset>
+    <div class="grid-3">
+      <div class="stat t-teal"><b>46</b><small>kata</small></div>
+      <div class="stat t-green"><b>1:48</b><small>kamu bicara</small></div>
+      <div class="stat t-ochre"><b>2</b><small>koreksi</small></div>
+    </div>
+  </aside>
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>

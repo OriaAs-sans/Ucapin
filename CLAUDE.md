@@ -10,3 +10,4 @@ Ringkasan aturan terpenting (detail di rules.md):
 1. **Dilarang `git commit` / `git push`** dalam bentuk apa pun. Siapkan pesan commit saja; pengguna yang menjalankan.
 2. **Diskusi dulu** setiap ada konteks/pembahasan/perubahan konsep baru; eksekusi setelah pengguna setuju.
 3. **Update graphify** (`graphify-out/`) setiap ada perubahan konsep atau kode, sebelum menutup tugas.
+4. **Antislop wajib** untuk setiap pekerjaan UI, desain, copy, dan komentar kode (Delivery Gate harus PASS).

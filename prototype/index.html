@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="id" data-type="software">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var q=new URLSearchParams(location.search).get("theme"),t=q||localStorage.getItem("ucapin-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <title>Beranda · Ucapin</title>
+  <meta name="description" content="Latihan bicara bahasa Inggris harian. Kesalahan ucapan otomatis jadi latihan besok.">
+  <meta name="page-type" content="software"><meta name="site-kind" content="software">
+  <link rel="preload" href="assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/ui.css">
+</head>
+<body data-page="home">
+<a class="skip" href="#main">Langsung ke konten</a>
+<div class="app has-panel">
+  <aside class="side" aria-label="Navigasi utama">
+    <a class="brand" href="index.html"><span class="brand-word">Ucapin</span><span class="brand-ipa" aria-hidden="true">/ʊˈtʃapɪn/</span></a>
+    <nav class="nav">
+      <a href="index.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#home"/></svg>Beranda</a>
+      <a href="latihan-ucapan.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg>Latihan Ucapan</a>
+      <a href="roleplay.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg>Roleplay</a>
+      <a href="#bank"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#book"/></svg>Bank Kesalahan</a>
+      <div class="nav-group">Segera hadir</div>
+      <span class="soon">Shadowing</span>
+      <span class="soon">Speaking Test</span>
+    </nav>
+    <div class="side-foot">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#moon"/></svg><span>Mode gelap</span></button>
+      <a href="mulai.html">Atur ulang tujuan belajar</a>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <p class="proto-note">Prototype: nama, angka, dan skor di halaman ini adalah contoh data.</p>
+    <div class="stack">
+      <header class="topbar">
+        <div>
+          <h1>Halo, Alya!</h1>
+          <p>Siap ngobrol bahasa Inggris hari ini? Mulai dari kata yang kemarin tersandung.</p>
+        </div>
+      </header>
+
+      <section class="hero hero-enter" aria-labelledby="goal-title">
+        <div style="display:grid;gap:14px">
+          <h2 id="goal-title" style="font-size:1.9rem">Kamu sudah bicara 9 dari 15 menit</h2>
+          <p>6 menit lagi untuk menjaga 12 hari beruntunmu. Roleplay di kafe cukup untuk menutupnya.</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="bar" role="img" aria-label="60 persen target hari ini"><i style="width:60%"></i></div>
+            <b>60%</b>
+          </div>
+          <div class="btn-row" style="margin-top:6px">
+            <a class="btn btn-accent" href="roleplay.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg>Lanjut bicara</a>
+            <a class="btn btn-ghost-light" href="mulai.html">Ubah target</a>
+          </div>
+        </div>
+        <div class="mic-art" aria-hidden="true">
+          <span class="ring r1"></span><span class="ring r2"></span>
+          <span class="core"><svg class="icon"><use href="assets/icons.svg#mic"/></svg></span>
+          <span class="bubble bl" style="right:-6px;top:6px" lang="en"><svg class="icon"><use href="assets/icons.svg#speaker"/></svg>How are you?</span>
+          <span class="bubble br b2" style="left:-18px;top:62px" lang="en"><svg class="icon"><use href="assets/icons.svg#chat"/></svg>An iced latte, please</span>
+          <span class="sticker status-ok" style="left:4px;bottom:8px"><svg class="icon"><use href="assets/icons.svg#check"/></svg>Jelas!</span>
+        </div>
+      </section>
+
+      <section aria-labelledby="modes-title">
+        <div class="section-title"><h2 id="modes-title">Pilih mode latihan</h2></div>
+        <div class="grid-4 modes">
+          <article class="card card-link mode-card">
+            <div class="card-head"><span class="tile t-teal"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg></span><span class="chip chip-coral">Paling sering</span></div>
+            <h3><a class="stretch" href="latihan-ucapan.html">Latihan Ucapan</a></h3>
+            <p>Baca kalimat, lihat bunyi mana yang meleset kata per kata.</p>
+            <span class="meta"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#clock"/></svg>12 kalimat · ±5 menit</span>
+          </article>
+          <article class="card card-link mode-card">
+            <div class="card-head"><span class="tile t-coral"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg></span></div>
+            <h3><a class="stretch" href="roleplay.html">Roleplay</a></h3>
+            <p>Ngobrol berskenario: kafe, wawancara kerja, bandara.</p>
+            <span class="meta"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#clock"/></svg>3 misi · ±7 menit</span>
+          </article>
+          <article class="card mode-card">
+            <div class="card-head"><span class="tile t-green"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></span><span class="chip chip-ghost">Segera hadir</span></div>
+            <h3>Shadowing</h3>
+            <p>Dengarkan penutur asli, tirukan iramanya.</p>
+            <span class="meta">8 klip · ±6 menit</span>
+          </article>
+          <article class="card mode-card">
+            <div class="card-head"><span class="tile t-ochre"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#clock"/></svg></span><span class="chip chip-ghost">Segera hadir</span></div>
+            <h3>Speaking Test</h3>
+            <p>Jawab satu topik selama satu menit, gaya IELTS.</p>
+            <span class="meta">Perkiraan CEFR · ±4 menit</span>
+          </article>
+        </div>
+      </section>
+
+      <div class="grid-2">
+        <section class="card" id="bank" aria-labelledby="bank-title">
+          <div class="card-head" style="align-items:center;margin-bottom:14px">
+            <span class="tile tile-sm t-ochre"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#book"/></svg></span>
+            <div style="flex:1"><h2 id="bank-title">Bank Kesalahan</h2><p class="muted" style="font-size:.85rem" id="bank-sub">Dari roleplay kemarin, bunyi yang sering meleset untuk penutur Indonesia</p></div>
+          </div>
+          <div id="bank-list">
+            <div class="item">
+              <button class="icon-btn" type="button" data-say="very" aria-label="Dengar: very"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button>
+              <div class="grow"><p class="w" lang="en">very<small>/ˈvɛri/</small></p><p class="sub">terdengar “fery” · jadwal: hari ini</p></div>
+              <span class="status status-work"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#cross"/></svg>v → f</span>
+            </div>
+            <div class="item">
+              <button class="icon-btn" type="button" data-say="think" aria-label="Dengar: think"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button>
+              <div class="grow"><p class="w" lang="en">think<small>/θɪŋk/</small></p><p class="sub">terdengar “tink” · jadwal: hari ini</p></div>
+              <span class="status status-work"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#cross"/></svg>th → t</span>
+            </div>
+            <div class="item">
+              <button class="icon-btn" type="button" data-say="worked" aria-label="Dengar: worked"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button>
+              <div class="grow"><p class="w" lang="en">worked<small>/wɜrkt/</small></p><p class="sub">bunyi /t/ akhir hilang · jadwal: besok</p></div>
+              <span class="status status-almost"><svg class="icon icon-sm" aria-hidden="true"><use href="assets/icons.svg#again"/></svg>-ed</span>
+            </div>
+            <a class="btn btn-primary" href="latihan-ucapan.html" style="width:100%;margin-top:14px">Latih 3 kata ini</a>
+          </div>
+          <div class="alert" id="bank-empty" hidden>
+            <h3>Bank Kesalahan masih kosong</h3>
+            <p>Setiap kata yang belum jelas saat latihan atau roleplay akan masuk ke sini otomatis, lengkap dengan jadwal ulangnya.</p>
+            <div class="btn-row"><a class="btn btn-primary" href="latihan-ucapan.html">Mulai latihan pertama</a></div>
+          </div>
+          <p class="meta" style="margin-top:12px"><a href="?kosong=1#bank" id="bank-demo">Lihat tampilan untuk pengguna baru</a></p>
+        </section>
+
+        <section class="card" aria-labelledby="cont-title">
+          <h2 id="cont-title" class="sr-only">Lanjutkan roleplay</h2>
+          <div class="scene">
+            <div class="card-head" style="align-items:center;justify-content:flex-start">
+              <span class="tile tile-sm" style="background:var(--surface);color:var(--tile-coral-fg)"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg></span>
+              <div><h3>Memesan di kafe</h3><p class="muted" style="font-size:.85rem">bersama Sam, barista · A2</p></div>
+            </div>
+            <p class="q" lang="en">“Sure! Anything to eat with that?”</p>
+          </div>
+          <div style="margin:14px 0">
+            <div class="task done"><span class="dot"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#check"/></svg></span><span>Pesan satu minuman</span></div>
+            <div class="task"><span class="dot"></span><span>Tambah makanan</span></div>
+            <div class="task"><span class="dot"></span><span>Bayar dan pamit</span></div>
+          </div>
+          <a class="btn btn-primary" href="roleplay.html" style="width:100%">Lanjutkan percakapan</a>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel" aria-label="Profil dan progres">
+    <div class="profile">
+      <span class="avatar" aria-hidden="true">AL</span>
+      <h2 style="font-size:1.2rem">Alya Putri</h2>
+      <span class="chip chip-teal">Level B1 · Menengah</span>
+    </div>
+    <div class="grid-3">
+      <div class="stat t-coral"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#flame"/></svg><b>12</b><small>hari</small></div>
+      <div class="stat t-teal"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg><b>186</b><small>menit</small></div>
+      <div class="stat t-green"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#check"/></svg><b>82</b><small>kejelasan</small></div>
+    </div>
+    <section>
+      <div class="section-title"><h2 style="font-size:1.1rem">Bicara minggu ini</h2><span class="meta">49 menit</span></div>
+      <div class="week" role="img" aria-label="Menit bicara: Senin 8, Selasa 12, Rabu 6, Kamis 15, Jumat 9, Sabtu dan Minggu belum">
+        <div><b style="height:53%"></b>Sen</div><div><b style="height:80%"></b>Sel</div><div><b style="height:40%"></b>Rab</div><div><b style="height:100%"></b>Kam</div><div class="today"><b style="height:60%"></b>Jum</div><div><b style="height:3%"></b>Sab</div><div><b style="height:3%"></b>Min</div>
+      </div>
+    </section>
+    <section class="league">
+      <div class="section-title"><h2 style="font-size:1.1rem">Liga mingguan</h2><span class="chip chip-ochre">menit bicara</span></div>
+      <div class="row-l"><span class="rank">1</span><span class="avatar avatar-sm avatar-teal" aria-hidden="true">RK</span><span style="flex:1;font-weight:700">Raka</span><span class="meta">148 mnt</span></div>
+      <div class="row-l me"><span class="rank">2</span><span class="avatar avatar-sm" aria-hidden="true">AL</span><span style="flex:1;font-weight:700">Alya (kamu)</span><span class="meta">131 mnt</span></div>
+      <div class="row-l"><span class="rank">3</span><span class="avatar avatar-sm avatar-teal" aria-hidden="true">ND</span><span style="flex:1;font-weight:700">Nadia</span><span class="meta">117 mnt</span></div>
+      <p class="muted" style="font-size:.82rem;margin-top:6px">Peringkat dihitung dari usaha (menit bicara), bukan dari skor pengucapan.</p>
+    </section>
+  </aside>
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>

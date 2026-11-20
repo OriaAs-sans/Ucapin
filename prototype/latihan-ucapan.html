@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="id" data-type="software">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var q=new URLSearchParams(location.search).get("theme"),t=q||localStorage.getItem("ucapin-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <title>Latihan Ucapan · Ucapin</title>
+  <meta name="description" content="Baca kalimat bahasa Inggris dengan suara keras dan lihat bunyi mana yang meleset.">
+  <meta name="page-type" content="software"><meta name="site-kind" content="software">
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/ui.css">
+</head>
+<body data-page="drill">
+<a class="skip" href="#main">Langsung ke konten</a>
+<div class="app has-panel">
+  <aside class="side" aria-label="Navigasi utama">
+    <a class="brand" href="index.html"><span class="brand-word">Ucapin</span><span class="brand-ipa" aria-hidden="true">/ʊˈtʃapɪn/</span></a>
+    <nav class="nav">
+      <a href="index.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#home"/></svg>Beranda</a>
+      <a href="latihan-ucapan.html" aria-current="page"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg>Latihan Ucapan</a>
+      <a href="roleplay.html"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#chat"/></svg>Roleplay</a>
+      <a href="index.html#bank"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#book"/></svg>Bank Kesalahan</a>
+      <div class="nav-group">Segera hadir</div>
+      <span class="soon">Shadowing</span>
+      <span class="soon">Speaking Test</span>
+    </nav>
+    <div class="side-foot">
+      <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#moon"/></svg><span>Mode gelap</span></button>
+      <a href="mulai.html">Atur ulang tujuan belajar</a>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <p class="proto-note">Prototype: mikrofon dan suara contoh berfungsi, skor masih contoh data.</p>
+    <div class="stack">
+      <header class="topbar" style="flex-wrap:nowrap">
+        <a class="icon-btn" href="index.html" aria-label="Kembali ke Beranda"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#back"/></svg></a>
+        <div style="flex:1;min-width:0">
+          <p class="meta" style="margin:0">Latihan Ucapan</p>
+          <h1 style="font-size:1.6rem">Obrolan ringan</h1>
+        </div>
+        <span class="chip chip-ochre">Fokus: /v/ dan /ð/</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="meterbar mb-coral" style="width:140px" role="img" aria-label="Kalimat 4 dari 12"><i style="width:33%"></i></div>
+          <span class="meta" id="counter" aria-live="polite">Kalimat 4 dari 12</span>
+        </div>
+      </header>
+
+      <article class="card" style="padding:32px;text-align:center" aria-labelledby="sentence-label">
+        <h2 id="sentence-label" style="font-size:1rem;color:var(--text-2);font-family:var(--font-ui)">Baca kalimat ini dengan suara keras</h2>
+        <p class="sentence" id="sentence" lang="en" style="justify-content:center;margin-top:8px"></p>
+        <p class="ipa-line" id="ipa" lang="en" hidden style="margin-top:14px"></p>
+        <p class="translation" id="arti" hidden style="margin-top:14px"></p>
+        <div class="btn-row" style="justify-content:center;margin-top:22px">
+          <button class="btn" type="button" data-say-sentence data-say=""><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Dengar</button>
+          <button class="btn" type="button" data-say-sentence data-say="" data-rate="0.7"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#slow"/></svg>Pelan 0,7×</button>
+          <button class="btn" type="button" data-toggle="ipa" aria-pressed="false" aria-expanded="false">IPA</button>
+          <button class="btn" type="button" data-toggle="arti" aria-pressed="false" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#translate"/></svg>Arti</button>
+        </div>
+        <div class="legend" style="justify-content:center;margin-top:18px" aria-label="Arti tanda">
+          <span><span class="mk mk-ok">jelas</span> garis lurus</span>
+          <span><span class="mk mk-almost">hampir</span> garis titik</span>
+          <span><span class="mk mk-work">ulang</span> garis gelombang</span>
+        </div>
+      </article>
+
+      <section aria-labelledby="rec-title">
+        <h2 id="rec-title" class="sr-only">Rekam ucapan</h2>
+        <div class="recorder">
+          <div class="levels levels-right" id="levels-l" aria-hidden="true"></div>
+          <div><button class="mic" id="mic" type="button" data-state="idle" aria-label="Ketuk untuk bicara"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg></button></div>
+          <div class="levels" id="levels-r" aria-hidden="true"></div>
+        </div>
+        <p class="mic-label" id="mic-label" aria-live="polite">Ketuk untuk bicara</p>
+        <p class="mic-hint" id="mic-hint">Ketuk lagi kalau sudah selesai</p>
+
+        <div class="alert alert-error" id="mic-error" role="alert" hidden style="margin-top:20px">
+          <h3><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#cross"/></svg><span id="mic-error-title"></span></h3>
+          <p id="mic-error-body"></p>
+          <div class="btn-row">
+            <a class="btn" href="cek-mikrofon.html">Buka cek mikrofon</a>
+            <button class="btn btn-quiet" type="button" id="simulate">Lihat contoh hasil tanpa mikrofon</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="result" hidden aria-labelledby="result-title" aria-live="polite">
+        <div class="section-title"><h2 id="result-title">Hasil kalimat ini <span class="meta">(contoh data)</span></h2></div>
+        <div class="alert alert-warn" id="retry-prompt" hidden style="margin-bottom:16px">
+          <h3><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#again"/></svg>Coba ucapkan lagi kata <span lang="en" id="retry-word"></span> saja.</h3>
+          <p>Dengarkan dulu kalau perlu, lalu ketuk mikrofon. Cara mengucapkannya ada di catatan pelatih.</p>
+          <div class="btn-row">
+            <button class="btn" type="button" id="retry-say" data-say=""><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg>Dengar kata ini</button>
+            <button class="btn btn-accent" type="button" id="retry-word-btn"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mic"/></svg>Ucapkan lagi</button>
+          </div>
+        </div>
+        <div class="grid-4" id="scores"></div>
+        <p class="muted" id="saved-note" hidden style="margin-top:12px">Kata yang perlu latihan sudah masuk <a href="index.html#bank">Bank Kesalahan</a>.</p>
+      </section>
+
+      <div class="btn-row" style="justify-content:space-between">
+        <button class="btn btn-quiet" type="button" id="skip">Lewati kalimat ini</button>
+        <button class="btn btn-primary" type="button" id="next" disabled>Kalimat berikutnya<svg class="icon" aria-hidden="true"><use href="assets/icons.svg#next"/></svg></button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="panel" aria-labelledby="coach-title">
+    <div class="card-head" style="align-items:center">
+      <span class="tile tile-sm t-teal"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#book"/></svg></span>
+      <div style="flex:1"><h2 id="coach-title" style="font-size:1.15rem">Catatan pelatih</h2><p class="muted" style="font-size:.85rem">Satu bunyi dulu, pelan-pelan</p></div>
+    </div>
+    <p class="muted" style="font-size:.9rem">Coba ucapkan sendiri dulu. Buka catatan kalau sudah mencoba dan masih bingung.</p>
+    <button class="btn" type="button" id="coach-toggle" data-toggle="coach-detail" data-label-open="Sembunyikan catatan" aria-expanded="false">Tampilkan catatan</button>
+    <div id="coach-detail" hidden style="display:grid;gap:18px">
+      <div class="scene" style="background:var(--work-wash)">
+        <div class="card-head" style="align-items:center">
+          <p style="font:800 2.4rem/1 var(--font-display);color:var(--work-text)" lang="en"><span class="mk mk-work">very</span></p>
+          <button class="icon-btn" type="button" data-say="very" aria-label="Dengar: very"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#speaker"/></svg></button>
+        </div>
+        <p class="ipa" style="color:var(--text-2);margin-top:8px" lang="en">/ˈvɛri/</p>
+        <p style="margin-top:10px">Bunyi /v/-mu terdengar seperti /f/, jadi “fery”. Wajar, karena bahasa Indonesia tidak punya bunyi /v/.</p>
+      </div>
+      <section aria-labelledby="ph-title">
+        <h3 id="ph-title">Rincian bunyi <span class="meta">(contoh)</span></h3>
+        <div style="display:grid;gap:10px;margin-top:10px">
+          <div style="display:grid;grid-template-columns:2.5rem 1fr 2rem;gap:10px;align-items:center"><span class="ipa">/v/</span><div class="meterbar mb-work"><i style="width:38%"></i></div><b style="color:var(--work-text)">38</b></div>
+          <div style="display:grid;grid-template-columns:2.5rem 1fr 2rem;gap:10px;align-items:center"><span class="ipa">/ɛ/</span><div class="meterbar mb-ok"><i style="width:91%"></i></div><b style="color:var(--ok)">91</b></div>
+          <div style="display:grid;grid-template-columns:2.5rem 1fr 2rem;gap:10px;align-items:center"><span class="ipa">/r/</span><div class="meterbar mb-almost"><i style="width:74%"></i></div><b style="color:var(--almost-text)">74</b></div>
+          <div style="display:grid;grid-template-columns:2.5rem 1fr 2rem;gap:10px;align-items:center"><span class="ipa">/i/</span><div class="meterbar mb-ok"><i style="width:95%"></i></div><b style="color:var(--ok)">95</b></div>
+        </div>
+      </section>
+      <section class="scene" style="background:var(--tile-teal)" aria-labelledby="how-title">
+        <h3 id="how-title">Cara mengucapkan /v/</h3>
+        <div class="mouth" style="margin-top:10px">
+          <svg viewBox="0 0 160 90" role="img" aria-label="Gigi atas menyentuh bibir bawah">
+            <path d="M14 46 Q80 6 146 46 Q80 30 14 46Z" fill="#B5523B"/>
+            <rect x="46" y="34" width="68" height="16" rx="4" fill="#F7F5EE" stroke="#D4C8B7"/>
+            <path d="M58 34v16M70 34v16M82 34v16M94 34v16M106 34v16" stroke="#D4C8B7"/>
+            <path d="M14 46 Q80 52 146 46 Q80 92 14 46Z" fill="#D86A50"/>
+            <path d="M120 66 q14 -6 22 2" stroke="#3B6A78" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M126 76 q14 -4 20 4" stroke="#3B6A78" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <ol class="steps" style="margin-top:10px">
+          <li>Gigi atas menyentuh bibir bawah dengan ringan.</li>
+          <li>Hembuskan udara sambil menyalakan suara.</li>
+          <li>Rasakan getaran. Kalau tidak bergetar, itu masih /f/.</li>
+        </ol>
+      </section>
+      <section aria-labelledby="pairs-title">
+        <h3 id="pairs-title">Dengar bedanya</h3>
+        <div class="pairs" style="margin-top:10px">
+          <button class="btn" type="button" lang="en" data-say="very">very</button>
+          <button class="btn" type="button" lang="en" data-say="fairy">fairy</button>
+          <button class="btn" type="button" lang="en" data-say="van">van</button>
+          <button class="btn" type="button" lang="en" data-say="fan">fan</button>
+          <button class="btn" type="button" lang="en" data-say="vest">vest</button>
+          <button class="btn" type="button" lang="en" data-say="fest">fest</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+</div>
+<script src="assets/app.js"></script>
+</body>
+</html>
