@@ -79,10 +79,34 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
   const [minutes, setMinutes] = React.useState<number>(
     user.dailyTargetMinutes || 10
   );
+  const [isReconfiguring, setIsReconfiguring] = React.useState<boolean>(
+    user.onboardingCompleted
+  );
   const [error, setError] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [savedSuccess, setSavedSuccess] = React.useState(false);
+
+  // Always fetch latest user preferences from PostgreSQL on mount to bypass any router cache
+  React.useEffect(() => {
+    let active = true;
+    fetch("/api/v1/onboarding", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!active || !data?.ok || !data?.user) return;
+        const fresh: UserProfileDTO = data.user;
+        setGoals(Array.isArray(fresh.goals) ? fresh.goals : []);
+        setLevel(fresh.cefrLevel || "A2");
+        setMinutes(fresh.dailyTargetMinutes || 10);
+        setIsReconfiguring(Boolean(fresh.onboardingCompleted));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const toggleGoal = (id: string) => {
+    setSavedSuccess(false);
     setGoals((prev) => {
       const next = prev.includes(id)
         ? prev.filter((g) => g !== id)
@@ -94,15 +118,15 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
 
   const selectedGoalDetails = GOAL_OPTIONS.filter((g) => goals.includes(g.id));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const savePreferencesToDb = async () => {
     if (goals.length === 0) {
       setError(true);
-      return;
+      return false;
     }
     setSaving(true);
+    setSavedSuccess(false);
     try {
-      await fetch("/api/v1/onboarding", {
+      const res = await fetch("/api/v1/onboarding", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,8 +135,22 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
           dailyTargetMinutes: minutes,
         }),
       });
+      const data = await res.json();
+      return Boolean(data?.ok);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const ok = await savePreferencesToDb();
+    if (!ok) return;
+
+    if (isReconfiguring) {
+      setSavedSuccess(true);
+      router.refresh();
+    } else {
       router.push("/cek-mikrofon");
       router.refresh();
     }
@@ -120,7 +158,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[420px_minmax(0,1fr)]">
-      {/* Left Brand Panel: Real-time Curriculum Plan Summary (Zero random fake mistakes!) */}
+      {/* Left Brand Panel: Real-time Curriculum Plan Summary */}
       <aside className="flex flex-col justify-between gap-8 bg-[var(--side-bg)] p-7 text-[var(--side-text)] lg:p-10">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-[#F7F5EE] no-underline">
@@ -128,10 +166,11 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
               Ucapin
             </span>
           </Link>
-          <Badge variant="teal">Langkah 1 / 3</Badge>
+          <Badge variant="teal">
+            {isReconfiguring ? "Pengaturan Preferensi" : "Langkah 1 / 3"}
+          </Badge>
         </div>
 
-        {/* Live Curriculum Preview Box driven by the user's selections */}
         <div className="rounded-[18px] border border-[rgba(212,200,183,0.32)] bg-[rgba(19,41,46,0.55)] p-5 text-[#F7F5EE]">
           <div className="flex items-center justify-between border-b border-[rgba(212,200,183,0.22)] pb-3">
             <div>
@@ -150,7 +189,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
           <div className="mt-3.5 grid gap-3 text-xs">
             <div>
               <p className="font-bold text-[#D4C8B7]">
-                Tujuan yang kamu pilih ({selectedGoalDetails.length}):
+                Tujuan tersimpan / dipilih ({selectedGoalDetails.length}):
               </p>
               {selectedGoalDetails.length > 0 ? (
                 <ul className="mt-1.5 grid gap-2">
@@ -214,51 +253,86 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
             Bicara dulu, sempurna belakangan.
           </h2>
           <p className="mt-2 text-sm text-[var(--side-text)]">
-            Pilihan tujuanmu di langkah ini langsung menentukan kalimat Latihan
-            Ucapan dan skenario Roleplay yang dimuat dari PostgreSQL Laragon.
+            Setiap perubahan yang kamu simpan langsung diperbarui di tabel{" "}
+            <code>User</code> pada PostgreSQL Laragon.
           </p>
         </div>
       </aside>
 
-      {/* Right Form Panel: Step 1 of 3 */}
+      {/* Right Form Panel */}
       <main
         id="main-content"
         className="flex max-w-4xl flex-col gap-7 p-6 sm:p-10"
       >
         <div className="flex items-center gap-4">
           <Button asChild variant="quiet" size="sm">
-            <Link href="/masuk" aria-label="Kembali ke halaman Masuk">
+            <Link
+              href={isReconfiguring ? "/" : "/masuk"}
+              aria-label="Kembali"
+            >
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Link>
           </Button>
-          <ol
-            aria-label="Langkah 1 dari 3"
-            className="grid flex-1 grid-cols-3 gap-2"
-          >
-            <li className="h-2.5 rounded-full bg-[var(--coral)]" />
-            <li className="h-2.5 rounded-full bg-[var(--line)]" />
-            <li className="h-2.5 rounded-full bg-[var(--line)]" />
-          </ol>
-          <span className="text-xs font-bold text-[var(--text)]">
-            Langkah 1 dari 3 · Tujuan Belajar
-          </span>
+          {!isReconfiguring ? (
+            <>
+              <ol
+                aria-label="Langkah 1 dari 3"
+                className="grid flex-1 grid-cols-3 gap-2"
+              >
+                <li className="h-2.5 rounded-full bg-[var(--coral)]" />
+                <li className="h-2.5 rounded-full bg-[var(--line)]" />
+                <li className="h-2.5 rounded-full bg-[var(--line)]" />
+              </ol>
+              <span className="text-xs font-bold text-[var(--text)]">
+                Langkah 1 dari 3 · Tujuan Belajar
+              </span>
+            </>
+          ) : (
+            <span className="flex-1 text-xs font-bold uppercase tracking-wider text-[var(--text-2)]">
+              Pengaturan Tujuan, Level & Target Harian
+            </span>
+          )}
           <ThemeToggle onLightSurface />
         </div>
 
         <header>
           <h1 className="font-display text-3xl font-extrabold">
-            Kamu ingin bisa bicara bahasa Inggris untuk apa?
+            {isReconfiguring
+              ? "Atur ulang tujuan dan target belajarmu"
+              : "Kamu ingin bisa bicara bahasa Inggris untuk apa?"}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-2)]">
-            Pilih satu atau lebih tujuan. Kurikulum kalimat dan skenario
-            roleplay akan disesuaikan dengan pilihanmu.
+            Pilihan yang sudah kamu simpan otomatis tercentang dari database.
+            Ubah kapan saja untuk mengganti fokus latihan dan skenario roleplay.
           </p>
         </header>
+
+        {savedSuccess && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-card border-[1.5px] border-[var(--ok)] bg-[var(--ok-wash)] px-5 py-3.5"
+          >
+            <p className="flex items-center gap-2 text-sm font-bold text-[var(--ok)]">
+              <Check className="h-5 w-5" aria-hidden="true" />
+              <span>
+                Preferensi berhasil disimpan ke PostgreSQL Laragon!
+              </span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="default">
+                <Link href="/">Kembali ke Beranda</Link>
+              </Button>
+              <Button asChild size="sm" variant="accent">
+                <Link href="/latihan-ucapan">Buka Latihan Ucapan</Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-7">
           <fieldset>
             <legend className="mb-3 font-display text-lg font-bold">
-              Tujuan belajar (pilih minimal satu)
+              Tujuan belajar (boleh pilih lebih dari satu)
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {GOAL_OPTIONS.map((g) => {
@@ -329,7 +403,10 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
                     name="level"
                     value={lv.id}
                     checked={level === lv.id}
-                    onChange={() => setLevel(lv.id)}
+                    onChange={() => {
+                      setSavedSuccess(false);
+                      setLevel(lv.id);
+                    }}
                     className="mt-1 h-4 w-4 accent-[var(--coral)]"
                   />
                   <span>
@@ -363,7 +440,10 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
                     name="menit"
                     value={m.val}
                     checked={minutes === m.val}
-                    onChange={() => setMinutes(m.val)}
+                    onChange={() => {
+                      setSavedSuccess(false);
+                      setMinutes(m.val);
+                    }}
                     className="mt-1 h-4 w-4 accent-[var(--coral)]"
                   />
                   <span>
@@ -375,24 +455,50 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
                 </label>
               ))}
             </div>
-            <p className="mt-2.5 text-xs text-[var(--text-2)]">
-              Kamu dapat 2 jatah libur per bulan. Bolos sehari tidak menghapus
-              progres.
-            </p>
           </fieldset>
 
           <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t-[1.5px] border-[var(--line)] pt-5">
-            <Link href="/masuk" className="text-sm font-semibold underline">
-              Ganti akun
-            </Link>
-            <Button type="submit" disabled={saving}>
-              <span>
-                {saving
-                  ? "Menyimpan ke Database..."
-                  : "Simpan & Lanjut ke Cek Mikrofon (Langkah 2/3)"}
-              </span>
-              <ArrowRight className="h-5 w-5" aria-hidden="true" />
-            </Button>
+            {isReconfiguring ? (
+              <Link
+                href="/cek-mikrofon"
+                className="text-sm font-semibold text-[var(--link)] underline"
+              >
+                Buka Pengaturan Mikrofon & Privasi
+              </Link>
+            ) : (
+              <Link href="/masuk" className="text-sm font-semibold underline">
+                Ganti akun
+              </Link>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3">
+              {isReconfiguring && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={async () => {
+                    const ok = await savePreferencesToDb();
+                    if (ok) {
+                      router.push("/cek-mikrofon");
+                      router.refresh();
+                    }
+                  }}
+                >
+                  Simpan & Cek Mikrofon
+                </Button>
+              )}
+              <Button type="submit" variant="accent" disabled={saving}>
+                <span>
+                  {saving
+                    ? "Menyimpan ke Database..."
+                    : isReconfiguring
+                    ? "Simpan Perubahan Preferensi"
+                    : "Simpan & Lanjut ke Cek Mikrofon (Langkah 2/3)"}
+                </span>
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
         </form>
       </main>

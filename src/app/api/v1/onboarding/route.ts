@@ -1,5 +1,26 @@
 import { NextResponse } from "next/server";
-import { updateOnboardingProfile } from "@/server/repositories/ucapin-repository";
+import { revalidatePath } from "next/cache";
+import {
+  getActiveUser,
+  SESSION_COOKIE_NAME,
+  updateOnboardingProfile,
+} from "@/server/repositories/ucapin-repository";
+
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  try {
+    const user = await getActiveUser();
+    return NextResponse.json(
+      { ok: true, user },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Gagal memuat profil";
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+  }
+}
 
 export async function PATCH(request: Request) {
   try {
@@ -32,7 +53,22 @@ export async function PATCH(request: Request) {
           : undefined,
     });
 
-    return NextResponse.json({ ok: true, user: updated });
+    revalidatePath("/", "layout");
+    revalidatePath("/");
+    revalidatePath("/mulai");
+    revalidatePath("/cek-mikrofon");
+    revalidatePath("/latihan-ucapan");
+    revalidatePath("/roleplay");
+
+    const response = NextResponse.json({ ok: true, user: updated });
+    response.cookies.set(SESSION_COOKIE_NAME, updated.id, {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 30,
+    });
+
+    return response;
   } catch (error) {
     const message =
       error instanceof Error

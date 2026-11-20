@@ -13,12 +13,21 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProofreadingSentence } from "@/components/shared/proofreading-sentence";
-import { MicRecorder, type MicState } from "@/components/shared/mic-recorder";
+import {
+  MicRecorder,
+  type MicState,
+  type RecordedSpeechResult,
+} from "@/components/shared/mic-recorder";
 import { ScoreMetricCard } from "@/components/shared/score-metric-card";
 import { AudioTtsButton } from "@/components/shared/audio-tts-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  assessSpokenUtterance,
+  getArticulationGuideForWord,
+  type UtteranceAssessmentResult,
+} from "@/lib/speech-assessor";
 import type { DrillSentenceDTO, UserProfileDTO } from "@/types/ucapin";
 
 export interface DrillWorkspaceProps {
@@ -46,77 +55,130 @@ export function DrillWorkspace({
   const router = useRouter();
   const [index, setIndex] = React.useState(0);
   const [micState, setMicState] = React.useState<MicState>("idle");
-  const [showMarks, setShowMarks] = React.useState(false);
+  const [assessment, setAssessment] =
+    React.useState<UtteranceAssessmentResult | null>(null);
+  const [selectedCoachWord, setSelectedCoachWord] = React.useState<string>("");
   const [coachOpen, setCoachOpen] = React.useState(false);
-  const [savedToDb, setSavedToDb] = React.useState(false);
+  const [savedWordsToDb, setSavedWordsToDb] = React.useState<string[]>([]);
   const [finishingSession, setFinishingSession] = React.useState(false);
-  const [completedCount, setCompletedCount] = React.useState(0);
+  const [completedHistory, setCompletedHistory] = React.useState<
+    {
+      referenceText: string;
+      assessment: UtteranceAssessmentResult;
+      durationSec: number;
+    }[]
+  >([]);
+
+  const current = sentences[index] ?? sentences[0];
+  const totalInDeck = sentences.length;
+  const progressValue = Math.round(
+    ((index + 1) / Math.max(1, totalInDeck)) * 100
+  );
 
   React.useEffect(() => {
     setIndex(0);
     setMicState("idle");
-    setShowMarks(false);
-    setSavedToDb(false);
-  }, [activeGoal, sentences.length]);
-
-  const current = sentences[index] ?? sentences[0];
-  const totalInDeck = sentences.length;
-  const progressValue = Math.round(((index + 1) / Math.max(1, totalInDeck)) * 100);
+    setAssessment(null);
+    setSelectedCoachWord(sentences[0]?.coachWord ?? "");
+    setSavedWordsToDb([]);
+  }, [activeGoal, sentences]);
 
   const resetSentenceState = (nextIdx: number) => {
+    const nextSentence = sentences[nextIdx] ?? sentences[0];
     setIndex(nextIdx);
     setMicState("idle");
-    setShowMarks(false);
-    setSavedToDb(false);
+    setAssessment(null);
+    setSelectedCoachWord(nextSentence?.coachWord ?? "");
+    setSavedWordsToDb([]);
   };
 
-  const evaluateUtterance = React.useCallback(async () => {
-    setMicState("processing");
-    window.setTimeout(async () => {
-      setShowMarks(true);
-      setMicState("done");
-      setCompletedCount((c) => c + 1);
+  const handleRecordingEvaluated = React.useCallback(
+    async (rec: RecordedSpeechResult) => {
+      setMicState("processing");
+      window.setTimeout(async () => {
+        const evaluated = assessSpokenUtterance({
+          referenceText: current.text,
+          spokenTranscript: rec.transcript,
+          defaultTargetMarks: current.targetMarks,
+          durationMs: rec.durationMs,
+          confidence: rec.confidence,
+        });
 
-      const workEntries = Object.entries(current.targetMarks).filter(
-        ([, m]) => m.status === "work" || m.status === "almost"
-      );
-      if (workEntries.length > 0) {
-        const [wordKey, mark] = workEntries[0];
-        try {
-          await fetch("/api/v1/mistakes", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              word: wordKey,
-              ipa: mark.ipa ?? current.coachIpa,
-              phoneme: current.phonemeBreakdown[0]?.phoneme ?? "/v/",
-              errorPattern: mark.note.replace("jadi", "→"),
-              heardAs: `terdengar kurang jelas (${mark.note})`,
-              sourceMode: `Latihan: ${current.category}`,
-              status: mark.status,
-            }),
-          });
-          setSavedToDb(true);
-        } catch {
-          setSavedToDb(true);
+        setAssessment(evaluated);
+        setSelectedCoachWord(evaluated.primaryFocusWord);
+        setMicState("done");
+
+        setCompletedHistory((prev) => [
+          ...prev,
+          {
+            referenceText: current.text,
+            assessment: evaluated,
+            durationSec: Math.max(5, Math.round(rec.durationMs / 1000)),
+          },
+        ]);
+
+        // Persist ONLY real mispronounced words into Laragon PostgreSQL MistakeItem table
+        if (evaluated.flaggedMistakes.length > 0) {
+          const savedList: string[] = [];
+          for (const m of evaluated.flaggedMistakes) {
+            try {
+              await fetch("/api/v1/mistakes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  word: m.word,
+                  ipa: m.ipa,
+                  phoneme: m.phoneme,
+                  errorPattern: m.errorPattern,
+                  heardAs: m.heardAs,
+                  sourceMode: `Latihan: ${current.category}`,
+                  status: m.status,
+                }),
+              });
+              savedList.push(m.word);
+            } catch {
+              /* ignore */
+            }
+          }
+          setSavedWordsToDb(savedList);
+        } else {
+          setSavedWordsToDb([]);
         }
-      }
-    }, 600);
-  }, [current]);
+      }, 350);
+    },
+    [current]
+  );
 
   const handleFinishSession = async () => {
     setFinishingSession(true);
     try {
-      const mistakesPayload = Object.entries(current.targetMarks).map(
-        ([word, mark]) => ({
-          word,
-          ipa: mark.ipa ?? current.coachIpa,
-          phoneme: current.phonemeBreakdown[0]?.phoneme ?? "/v/",
-          errorPattern: mark.note.replace("jadi", "→"),
-          heardAs: `terdengar kurang jelas (${mark.note})`,
-          status: mark.status,
-        })
+      const historyToSave =
+        completedHistory.length > 0
+          ? completedHistory
+          : assessment
+          ? [
+              {
+                referenceText: current.text,
+                assessment,
+                durationSec: 30,
+              },
+            ]
+          : [];
+
+      const allMistakes = historyToSave.flatMap(
+        (h) => h.assessment.flaggedMistakes
       );
+      const avgScore = (idx: number, fallback: number) =>
+        historyToSave.length > 0
+          ? Math.round(
+              historyToSave.reduce(
+                (acc, h) => acc + (h.assessment.scores[idx]?.score ?? fallback),
+                0
+              ) / historyToSave.length
+            )
+          : fallback;
+
+      const totalSec = historyToSave.reduce((acc, h) => acc + h.durationSec, 0);
 
       const res = await fetch("/api/v1/sessions", {
         method: "POST",
@@ -124,24 +186,32 @@ export function DrillWorkspace({
         body: JSON.stringify({
           mode: "drill",
           scenarioTitle: `Latihan Ucapan: ${current.category}`,
-          durationSec: Math.max(120, (completedCount + 1) * 45),
-          addedMinutes: 3,
-          clarityScore: current.sampleScores[0]?.score ?? 83,
-          pronunciationScore: current.sampleScores[1]?.score ?? 78,
-          fluencyScore: current.sampleScores[2]?.score ?? 87,
-          grammarScore: 85,
-          vocabularyScore: 88,
-          utterances: [
-            {
-              referenceText: current.text,
-              transcript: current.text,
-              betterVersion: current.text,
-              status: "almost",
-              note: `Fokus koreksi pada kata ${current.coachWord} (${current.focusPhonemes})`,
-              clarityScore: current.sampleScores[0]?.score ?? 83,
-            },
-          ],
-          mistakes: mistakesPayload,
+          durationSec: Math.max(60, totalSec),
+          addedMinutes: Math.max(2, Math.ceil(totalSec / 60) + 1),
+          clarityScore: avgScore(0, 85),
+          pronunciationScore: avgScore(1, 82),
+          fluencyScore: avgScore(2, 86),
+          grammarScore: 88,
+          vocabularyScore: 90,
+          utterances: historyToSave.map((h) => ({
+            referenceText: h.referenceText,
+            transcript: h.assessment.spokenTranscript,
+            betterVersion: h.referenceText,
+            status:
+              h.assessment.flaggedMistakes.length === 0
+                ? "ok"
+                : h.assessment.flaggedMistakes.some((m) => m.status === "work")
+                ? "work"
+                : "almost",
+            note:
+              h.assessment.flaggedMistakes.length === 0
+                ? "Semua kata terdengar jelas"
+                : `Koreksi pada kata: ${h.assessment.flaggedMistakes
+                    .map((m) => m.word)
+                    .join(", ")}`,
+            clarityScore: h.assessment.scores[0]?.score ?? 85,
+          })),
+          mistakes: allMistakes,
         }),
       });
       const data = await res.json();
@@ -156,12 +226,33 @@ export function DrillWorkspace({
     router.push("/hasil");
   };
 
-  const primaryRetryWord = React.useMemo(() => {
-    const found = Object.entries(current.targetMarks).find(
-      ([, m]) => m.status === "work"
+  // Dynamic Coach Panel data based on clicked/active word
+  const activeCoachDetail = React.useMemo(() => {
+    const targetWord =
+      selectedCoachWord ||
+      assessment?.primaryFocusWord ||
+      current.coachWord;
+    if (assessment && assessment.wordDetails[targetWord]) {
+      return assessment.wordDetails[targetWord];
+    }
+    const defaultArticulation = getArticulationGuideForWord(
+      current.coachWord,
+      current.focusPhonemes
     );
-    return found ? found[0] : current.coachWord;
-  }, [current]);
+    return {
+      word: current.coachWord,
+      ipa: current.coachIpa,
+      status: "work" as const,
+      heardAs: "Klik kata pada kalimat untuk melihat analisis bunyinya",
+      note: current.coachNote,
+      phonemeBreakdown: current.phonemeBreakdown,
+      articulation: {
+        ...defaultArticulation,
+        steps: current.coachSteps,
+        minimalPairs: current.minimalPairs,
+      },
+    };
+  }, [selectedCoachWord, assessment, current]);
 
   const rightPanel = (
     <>
@@ -172,15 +263,10 @@ export function DrillWorkspace({
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-lg font-bold">Catatan pelatih</h2>
           <p className="text-xs text-[var(--text-2)]">
-            Satu bunyi dulu, pelan-pelan
+            Klik kata mana saja di kalimat untuk melihat bedah bunyinya
           </p>
         </div>
       </div>
-
-      <p className="text-sm text-[var(--text-2)]">
-        Coba ucapkan sendiri dulu. Buka catatan kalau sudah mencoba dan masih
-        bingung.
-      </p>
 
       <Button
         type="button"
@@ -190,29 +276,39 @@ export function DrillWorkspace({
         onClick={() => setCoachOpen((v) => !v)}
         className="w-full"
       >
-        {coachOpen ? "Sembunyikan catatan" : "Tampilkan catatan"}
+        {coachOpen ? "Sembunyikan catatan" : "Tampilkan catatan pelatih"}
       </Button>
 
       {coachOpen && (
         <div className="grid gap-5">
-          <div className="rounded-[18px] bg-[var(--work-wash)] p-4">
+          <div
+            className={
+              activeCoachDetail.status === "ok"
+                ? "rounded-[18px] bg-[var(--ok-wash)] p-4"
+                : activeCoachDetail.status === "almost"
+                ? "rounded-[18px] bg-[var(--almost-wash)] p-4"
+                : "rounded-[18px] bg-[var(--work-wash)] p-4"
+            }
+          >
             <div className="flex items-center justify-between gap-2">
               <p
                 lang="en"
-                className="font-display text-4xl font-extrabold leading-none text-[var(--work-text)]"
+                className="font-display text-4xl font-extrabold leading-none text-[var(--text)]"
               >
-                <span className="mk mk-work">{current.coachWord}</span>
+                <span className={`mk mk-${activeCoachDetail.status}`}>
+                  {activeCoachDetail.word}
+                </span>
               </p>
-              <AudioTtsButton text={current.coachWord} iconOnly />
+              <AudioTtsButton text={activeCoachDetail.word} iconOnly />
             </div>
             <p
               lang="en"
               className="mt-2 font-ipa text-base text-[var(--text-2)]"
             >
-              {current.coachIpa}
+              {activeCoachDetail.ipa}
             </p>
             <p className="mt-2.5 text-sm leading-relaxed">
-              {current.coachNote}
+              {activeCoachDetail.note}
             </p>
           </div>
 
@@ -221,18 +317,15 @@ export function DrillWorkspace({
               id="ph-breakdown-title"
               className="font-display text-base font-bold"
             >
-              Rincian bunyi{" "}
-              <span className="font-ui text-xs font-normal text-[var(--text-2)]">
-                (contoh)
-              </span>
+              Rincian bunyi kata &ldquo;{activeCoachDetail.word}&rdquo;
             </h3>
             <div className="mt-2.5 grid gap-2.5">
-              {current.phonemeBreakdown.map((ph, i) => (
+              {activeCoachDetail.phonemeBreakdown.map((ph, i) => (
                 <div
                   key={i}
-                  className="grid grid-cols-[2.75rem_1fr_2.25rem] items-center gap-2.5"
+                  className="grid grid-cols-[4.5rem_1fr_2.25rem] items-center gap-2.5"
                 >
-                  <span lang="en" className="font-ipa text-base">
+                  <span lang="en" className="font-ipa text-sm font-bold">
                     {ph.phoneme}
                   </span>
                   <Progress
@@ -266,13 +359,13 @@ export function DrillWorkspace({
               id="articulation-title"
               className="font-display text-base font-bold text-[var(--text)]"
             >
-              Cara mengucapkan {current.phonemeBreakdown[0]?.phoneme ?? "/v/"}
+              {activeCoachDetail.articulation.title}
             </h3>
             <div className="mt-2.5 grid place-items-center rounded-[14px] bg-[var(--surface)] p-3.5">
               <svg
                 viewBox="0 0 160 90"
                 role="img"
-                aria-label="Ilustrasi posisi bibir dan gigi"
+                aria-label="Ilustrasi posisi artikulasi mulut"
                 className="h-auto w-40"
               >
                 <path
@@ -313,7 +406,7 @@ export function DrillWorkspace({
               </svg>
             </div>
             <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
-              {current.coachSteps.map((step, idx) => (
+              {activeCoachDetail.articulation.steps.map((step, idx) => (
                 <li key={idx}>{step}</li>
               ))}
             </ol>
@@ -327,7 +420,7 @@ export function DrillWorkspace({
               Dengar bedanya (pasangan minimal)
             </h3>
             <div className="mt-2.5 flex flex-wrap gap-2">
-              {current.minimalPairs.map((pairWord) => (
+              {activeCoachDetail.articulation.minimalPairs.map((pairWord) => (
                 <AudioTtsButton
                   key={pairWord}
                   text={pairWord}
@@ -348,16 +441,15 @@ export function DrillWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Catatan pelatih"
-      prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Kalimat latihan dimuat dari PostgreSQL Laragon sesuai tujuan belajarmu.`}
+      prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Penilaian suara real-time aktif & tersambung ke PostgreSQL Laragon.`}
     >
       {isFirstOnboardingStep && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border-2 border-[var(--coral)] bg-[var(--tile-coral)] px-5 py-3.5">
           <div className="flex items-center gap-3">
             <Badge variant="coral">Langkah 3 dari 3 · Latihan Pertama</Badge>
             <p className="text-sm font-semibold text-[var(--text)]">
-              Ucapkan 1 kalimat di bawah ini, lalu klik{" "}
-              <strong>Selesai & Lihat Hasil Sesi</strong> untuk melihat progres
-              pertamamu tercatat di database!
+              Ucapkan kalimat di bawah ini dengan mikrofon (atau klik penguji
+              transkrip), lalu klik <strong>Selesai & Lihat Hasil Sesi</strong>!
             </p>
           </div>
           <ol
@@ -416,7 +508,7 @@ export function DrillWorkspace({
       >
         {GOAL_TABS.map((tab) => {
           const isSelected =
-            (tab.id === "user" && activeGoal === (user.goals[0] ?? "harian")) ||
+            (tab.id === "user" && activeGoal === (user.goals[0] ?? "kerja")) ||
             tab.id === activeGoal;
           const href =
             tab.id === "user"
@@ -438,95 +530,116 @@ export function DrillWorkspace({
         })}
       </div>
 
-      {/* Reusable Editorial Proofreading Sentence Card */}
+      {/* Reusable Editorial Proofreading Sentence Card driven by REAL assessment marks */}
       <ProofreadingSentence
         sentence={current.text}
         ipa={current.ipa}
         translation={current.translation}
-        marks={current.targetMarks}
-        showMarks={showMarks}
-        onWordSelect={() => setCoachOpen(true)}
+        marks={assessment ? assessment.marks : {}}
+        showMarks={Boolean(assessment)}
+        onWordSelect={(word) => {
+          setSelectedCoachWord(word);
+          setCoachOpen(true);
+        }}
       />
 
-      {/* Reusable Tap-to-Talk Microphone Recorder */}
+      {/* Reusable Tap-to-Talk Microphone Recorder with Real Web Speech STT & Audio Playback */}
       <section aria-labelledby="rec-section-title">
         <h2 id="rec-section-title" className="sr-only">
           Rekam ucapan
         </h2>
         <MicRecorder
           state={micState}
+          referenceText={current.text}
           onStateChange={(next) => {
             if (next === "recording" && micState === "done") {
-              setShowMarks(false);
+              setAssessment(null);
             }
             setMicState(next);
           }}
-          onFinishRecording={evaluateUtterance}
-          onSimulateWithoutMic={evaluateUtterance}
+          onFinishRecording={handleRecordingEvaluated}
         />
       </section>
 
-      {/* Prompt-before-Recast Result & 4 Score Metric Cards */}
-      {showMarks && (
+      {/* Real Dynamic Assessment Result & 4 Score Metric Cards */}
+      {assessment && (
         <section
           aria-labelledby="drill-result-title"
           aria-live="polite"
           className="grid gap-4"
         >
-          <div className="flex items-baseline justify-between">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2
               id="drill-result-title"
               className="font-display text-xl font-bold"
             >
-              Hasil kalimat ini{" "}
-              <span className="font-ui text-xs font-normal text-[var(--text-2)]">
-                (otomatis dicatat ke PostgreSQL Laragon)
-              </span>
+              Hasil penilaian suaramu
             </h2>
+            <p className="text-xs text-[var(--text-2)]">
+              Transkrip terdeteksi:{" "}
+              <strong lang="en" className="text-[var(--text)]">
+                &ldquo;{assessment.spokenTranscript}&rdquo;
+              </strong>
+            </p>
           </div>
 
-          <div className="rounded-card border-[1.5px] border-[var(--almost)] bg-[var(--almost-wash)] p-5">
-            <h3 className="flex items-center gap-2 font-display text-lg font-bold text-[var(--text)]">
-              <RotateCcw
-                className="h-5 w-5 shrink-0 text-[var(--almost-text)]"
-                aria-hidden="true"
-              />
-              <span>
-                Coba ucapkan lagi kata{" "}
-                <span lang="en" className="mk mk-work">
-                  {primaryRetryWord}
-                </span>{" "}
-                saja.
-              </span>
-            </h3>
-            <p className="mt-1.5 text-sm text-[var(--text)]">
-              Dengarkan dulu kalau perlu, lalu ketuk mikrofon. Cara
-              mengucapkannya ada di panel catatan pelatih.
-            </p>
-            <div className="mt-3.5 flex flex-wrap items-center gap-3">
-              <AudioTtsButton
-                text={primaryRetryWord}
-                label="Dengar kata ini"
-                variant="surface"
-              />
-              <Button
-                type="button"
-                variant="accent"
-                size="sm"
-                onClick={() => {
-                  setCoachOpen(true);
-                  setShowMarks(false);
-                  setMicState("idle");
-                }}
-              >
-                <Mic className="h-4 w-4" aria-hidden="true" />
-                <span>Ucapkan lagi</span>
-              </Button>
+          {assessment.flaggedMistakes.length > 0 ? (
+            <div className="rounded-card border-[1.5px] border-[var(--almost)] bg-[var(--almost-wash)] p-5">
+              <h3 className="flex items-center gap-2 font-display text-lg font-bold text-[var(--text)]">
+                <RotateCcw
+                  className="h-5 w-5 shrink-0 text-[var(--almost-text)]"
+                  aria-hidden="true"
+                />
+                <span>
+                  Coba ucapkan lagi kata{" "}
+                  <span lang="en" className="mk mk-work">
+                    {assessment.primaryFocusWord}
+                  </span>{" "}
+                  saja.
+                </span>
+              </h3>
+              <p className="mt-1.5 text-sm text-[var(--text)]">
+                Klik kata yang bergaris bawah untuk melihat panduan bibir/lidah
+                di panel Catatan Pelatih, lalu coba rekam sekali lagi.
+              </p>
+              <div className="mt-3.5 flex flex-wrap items-center gap-3">
+                <AudioTtsButton
+                  text={assessment.primaryFocusWord}
+                  label={`Dengar "${assessment.primaryFocusWord}"`}
+                  variant="surface"
+                />
+                <Button
+                  type="button"
+                  variant="accent"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedCoachWord(assessment.primaryFocusWord);
+                    setCoachOpen(true);
+                  }}
+                >
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                  <span>Buka panduan bunyi ini</span>
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-card border-[1.5px] border-[var(--ok)] bg-[var(--ok-wash)] p-5">
+              <h3 className="flex items-center gap-2 font-display text-lg font-bold text-[var(--ok)]">
+                <Check className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span>
+                  Semua kata terdengar jelas! Tidak ada kesalahan pada kalimat
+                  ini.
+                </span>
+              </h3>
+              <p className="mt-1 text-sm text-[var(--text)]">
+                Pengucapanmu pada kalimat ini sudah tepat. Lanjut ke kalimat
+                berikutnya atau simpan hasil sesimu.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {current.sampleScores.map((s, idx) => (
+            {assessment.scores.map((s, idx) => (
               <ScoreMetricCard
                 key={s.label}
                 label={s.label}
@@ -537,15 +650,16 @@ export function DrillWorkspace({
             ))}
           </div>
 
-          {savedToDb && (
+          {savedWordsToDb.length > 0 && (
             <p className="text-sm text-[var(--text-2)]">
-              Kata <strong lang="en">{primaryRetryWord}</strong> sudah otomatis
-              tersimpan ke{" "}
+              Kata{" "}
+              <strong lang="en">{savedWordsToDb.join(", ")}</strong> sudah
+              otomatis dicatat ke{" "}
               <Link
                 href="/bank-kesalahan"
                 className="font-bold text-[var(--link)] underline"
               >
-                Bank Kesalahan
+                Bank Kesalahan di PostgreSQL Laragon
               </Link>
               .
             </p>
@@ -564,7 +678,7 @@ export function DrillWorkspace({
         </Button>
 
         <div className="flex flex-wrap items-center gap-3">
-          {showMarks && (
+          {(assessment || completedHistory.length > 0) && (
             <Button
               type="button"
               variant="accent"
@@ -575,13 +689,13 @@ export function DrillWorkspace({
               <span>
                 {finishingSession
                   ? "Menyimpan Sesi..."
-                  : "Selesai & Lihat Hasil Sesi (+3 mnt)"}
+                  : "Selesai & Lihat Hasil Sesi"}
               </span>
             </Button>
           )}
           <Button
             type="button"
-            disabled={!showMarks}
+            disabled={!assessment}
             onClick={() => resetSentenceState((index + 1) % totalInDeck)}
           >
             <span>Kalimat berikutnya</span>

@@ -13,11 +13,16 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { AudioTtsButton } from "@/components/shared/audio-tts-button";
-import { MicRecorder, type MicState } from "@/components/shared/mic-recorder";
+import {
+  MicRecorder,
+  type MicState,
+  type RecordedSpeechResult,
+} from "@/components/shared/mic-recorder";
 import { PhoneticWordRow } from "@/components/shared/phonetic-word-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { assessSpokenUtterance } from "@/lib/speech-assessor";
 import type { ScenarioDTO, UserProfileDTO } from "@/types/ucapin";
 import { cn } from "@/lib/utils";
 
@@ -177,69 +182,86 @@ export function RoleplayWorkspace({
     router.push("/hasil");
   };
 
-  const submitTurn = React.useCallback(async () => {
-    if (!currentNode) return;
-    const spokenText = selectedHint ?? currentNode.hints[0] ?? "Yes, please.";
-    setSelectedHint(null);
-    setMicState("idle");
+  const submitTurn = React.useCallback(
+    async (rec?: RecordedSpeechResult) => {
+      if (!currentNode) return;
+      const targetReference =
+        selectedHint ?? currentNode.hints[0] ?? "Yes, please.";
+      const spokenText = rec?.transcript?.trim() || targetReference;
+      setSelectedHint(null);
+      setMicState("idle");
 
-    const sampleCorr = currentNode.sampleCorrection;
-    const shouldShowInline = correctionMode === "giliran" && sampleCorr;
+      const evaluated = assessSpokenUtterance({
+        referenceText: targetReference,
+        spokenTranscript: spokenText,
+        defaultTargetMarks: {},
+        durationMs: rec?.durationMs ?? 2500,
+        confidence: rec?.confidence ?? 0.85,
+      });
 
-    const myTurn: ChatTurn = {
-      id: `turn-me-${Date.now()}`,
-      who: "me",
-      speakerLabel: "Kamu",
-      text: spokenText,
-      correction: shouldShowInline
-        ? {
-            title: sampleCorr.promptText,
-            detail: sampleCorr.detailText,
-          }
-        : undefined,
-      okTag: !sampleCorr ? "Jelas dan natural" : undefined,
-    };
+      const firstMistake = evaluated.flaggedMistakes[0];
+      const shouldShowInline =
+        correctionMode === "giliran" && Boolean(firstMistake);
 
-    if (sampleCorr) {
-      fetch("/api/v1/mistakes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          word: sampleCorr.word,
-          ipa: sampleCorr.ipa,
-          phoneme: sampleCorr.phoneme,
-          errorPattern: sampleCorr.errorPattern,
-          heardAs: sampleCorr.detailText,
-          sourceMode: `Roleplay: ${scenario.title}`,
-          status: sampleCorr.status,
-        }),
-      }).catch(() => {});
-    }
+      const myTurn: ChatTurn = {
+        id: `turn-me-${Date.now()}`,
+        who: "me",
+        speakerLabel: "Kamu",
+        text: spokenText,
+        correction:
+          shouldShowInline && firstMistake
+            ? {
+                title: `Perhatikan pengucapan kata "${firstMistake.word}" (${firstMistake.errorPattern})`,
+                detail: `${firstMistake.heardAs}. Kalimat acuan: "${targetReference}". Kata ini masuk Bank Kesalahan.`,
+              }
+            : undefined,
+        okTag: !firstMistake ? "Ucapan jelas dan natural" : undefined,
+      };
 
-    const nextIdx = stepIndex + 1;
-    const nextNode = scenario.nodes[nextIdx];
+      if (evaluated.flaggedMistakes.length > 0) {
+        for (const m of evaluated.flaggedMistakes) {
+          fetch("/api/v1/mistakes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              word: m.word,
+              ipa: m.ipa,
+              phoneme: m.phoneme,
+              errorPattern: m.errorPattern,
+              heardAs: m.heardAs,
+              sourceMode: `Roleplay: ${scenario.title}`,
+              status: m.status,
+            }),
+          }).catch(() => {});
+        }
+      }
 
-    setTurns((prev) => [...prev, myTurn]);
-    setCompletedMissions(currentNode.targetMission);
-    setStepIndex(nextIdx);
+      const nextIdx = stepIndex + 1;
+      const nextNode = scenario.nodes[nextIdx];
 
-    if (nextNode) {
-      window.setTimeout(() => {
-        setTurns((prev) => [
-          ...prev,
-          {
-            id: `turn-char-${Date.now()}`,
-            who: "char",
-            speakerLabel: `${scenario.characterName}, ${scenario.characterRole}`,
-            text: nextNode.speakerLine,
-            translation: nextNode.translation,
-          },
-        ]);
-      }, 450);
-    } else {
-      setCompletedMissions(scenario.missions.length);
-    }
-  }, [currentNode, selectedHint, correctionMode, stepIndex, scenario]);
+      setTurns((prev) => [...prev, myTurn]);
+      setCompletedMissions(currentNode.targetMission);
+      setStepIndex(nextIdx);
+
+      if (nextNode) {
+        window.setTimeout(() => {
+          setTurns((prev) => [
+            ...prev,
+            {
+              id: `turn-char-${Date.now()}`,
+              who: "char",
+              speakerLabel: `${scenario.characterName}, ${scenario.characterRole}`,
+              text: nextNode.speakerLine,
+              translation: nextNode.translation,
+            },
+          ]);
+        }, 450);
+      } else {
+        setCompletedMissions(scenario.missions.length);
+      }
+    },
+    [currentNode, selectedHint, correctionMode, stepIndex, scenario]
+  );
 
   const rightPanel = (
     <>
@@ -651,13 +673,15 @@ export function RoleplayWorkspace({
           <MicRecorder
             compact
             state={micState}
+            referenceText={
+              selectedHint ?? currentNode?.hints[0] ?? "Yes, please."
+            }
             onStateChange={setMicState}
             onFinishRecording={submitTurn}
-            onSimulateWithoutMic={submitTurn}
             idleLabel={
               selectedHint
                 ? `Sekarang ucapkan: "${selectedHint}"`
-                : "Ketuk untuk menjawab"
+                : "Ketuk mikrofon untuk menjawab"
             }
           />
         </Card>
