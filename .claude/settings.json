@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git -C * commit:*)",
+      "Bash(git -C * push:*)",
+      "PowerShell(git commit:*)",
+      "PowerShell(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh repo create:*)",
+      "PowerShell(gh pr create:*)",
+      "PowerShell(gh repo create:*)"
+    ]
+  }
+}

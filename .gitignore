@@ -1,0 +1,32 @@
+# Dependencies & builds
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+
+# Env & secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Third-party reference library (re-download from github.com/VoltAgent/awesome-design-md)
+references/awesome-design-md/
+
+# Skill/tool caches
+.impeccable/
+.taste-skill/
+
+# Knowledge graph (rebuild locally with /graphify)
+graphify-out/
