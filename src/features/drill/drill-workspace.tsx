@@ -2,12 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  RotateCcw,
+  Check,
   Mic,
+  RotateCcw,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProofreadingSentence } from "@/components/shared/proofreading-sentence";
@@ -17,21 +19,49 @@ import { AudioTtsButton } from "@/components/shared/audio-tts-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { DrillSentenceDTO } from "@/types/ucapin";
+import type { DrillSentenceDTO, UserProfileDTO } from "@/types/ucapin";
 
 export interface DrillWorkspaceProps {
+  user: UserProfileDTO;
   sentences: DrillSentenceDTO[];
+  activeGoal: string;
+  isFirstOnboardingStep?: boolean;
 }
 
-export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
+const GOAL_TABS = [
+  { id: "user", label: "Sesuai Tujuanmu" },
+  { id: "kerja", label: "Wawancara & Kerja" },
+  { id: "jalan", label: "Jalan-jalan" },
+  { id: "ielts", label: "IELTS & Kuliah" },
+  { id: "harian", label: "Sehari-hari" },
+  { id: "bank", label: "Dari Bank Kesalahan" },
+];
+
+export function DrillWorkspace({
+  user,
+  sentences,
+  activeGoal,
+  isFirstOnboardingStep = false,
+}: DrillWorkspaceProps) {
+  const router = useRouter();
   const [index, setIndex] = React.useState(0);
   const [micState, setMicState] = React.useState<MicState>("idle");
   const [showMarks, setShowMarks] = React.useState(false);
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [savedToDb, setSavedToDb] = React.useState(false);
+  const [finishingSession, setFinishingSession] = React.useState(false);
+  const [completedCount, setCompletedCount] = React.useState(0);
+
+  React.useEffect(() => {
+    setIndex(0);
+    setMicState("idle");
+    setShowMarks(false);
+    setSavedToDb(false);
+  }, [activeGoal, sentences.length]);
 
   const current = sentences[index] ?? sentences[0];
-  const progressValue = Math.round(((index + 4) / 12) * 100);
+  const totalInDeck = sentences.length;
+  const progressValue = Math.round(((index + 1) / Math.max(1, totalInDeck)) * 100);
 
   const resetSentenceState = (nextIdx: number) => {
     setIndex(nextIdx);
@@ -45,10 +75,10 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
     window.setTimeout(async () => {
       setShowMarks(true);
       setMicState("done");
+      setCompletedCount((c) => c + 1);
 
-      // Automatically record the primary work word into Laragon PostgreSQL Mistake Bank
       const workEntries = Object.entries(current.targetMarks).filter(
-        ([, m]) => m.status === "work"
+        ([, m]) => m.status === "work" || m.status === "almost"
       );
       if (workEntries.length > 0) {
         const [wordKey, mark] = workEntries[0];
@@ -62,8 +92,8 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
               phoneme: current.phonemeBreakdown[0]?.phoneme ?? "/v/",
               errorPattern: mark.note.replace("jadi", "→"),
               heardAs: `terdengar kurang jelas (${mark.note})`,
-              sourceMode: "Latihan Ucapan",
-              status: "work",
+              sourceMode: `Latihan: ${current.category}`,
+              status: mark.status,
             }),
           });
           setSavedToDb(true);
@@ -71,8 +101,60 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
           setSavedToDb(true);
         }
       }
-    }, 650);
+    }, 600);
   }, [current]);
+
+  const handleFinishSession = async () => {
+    setFinishingSession(true);
+    try {
+      const mistakesPayload = Object.entries(current.targetMarks).map(
+        ([word, mark]) => ({
+          word,
+          ipa: mark.ipa ?? current.coachIpa,
+          phoneme: current.phonemeBreakdown[0]?.phoneme ?? "/v/",
+          errorPattern: mark.note.replace("jadi", "→"),
+          heardAs: `terdengar kurang jelas (${mark.note})`,
+          status: mark.status,
+        })
+      );
+
+      const res = await fetch("/api/v1/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "drill",
+          scenarioTitle: `Latihan Ucapan: ${current.category}`,
+          durationSec: Math.max(120, (completedCount + 1) * 45),
+          addedMinutes: 3,
+          clarityScore: current.sampleScores[0]?.score ?? 83,
+          pronunciationScore: current.sampleScores[1]?.score ?? 78,
+          fluencyScore: current.sampleScores[2]?.score ?? 87,
+          grammarScore: 85,
+          vocabularyScore: 88,
+          utterances: [
+            {
+              referenceText: current.text,
+              transcript: current.text,
+              betterVersion: current.text,
+              status: "almost",
+              note: `Fokus koreksi pada kata ${current.coachWord} (${current.focusPhonemes})`,
+              clarityScore: current.sampleScores[0]?.score ?? 83,
+            },
+          ],
+          mistakes: mistakesPayload,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok && data.redirectTo) {
+        router.push(data.redirectTo);
+        router.refresh();
+        return;
+      }
+    } finally {
+      setFinishingSession(false);
+    }
+    router.push("/hasil");
+  };
 
   const primaryRetryWord = React.useMemo(() => {
     const found = Object.entries(current.targetMarks).find(
@@ -135,7 +217,10 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
           </div>
 
           <section aria-labelledby="ph-breakdown-title">
-            <h3 id="ph-breakdown-title" className="font-display text-base font-bold">
+            <h3
+              id="ph-breakdown-title"
+              className="font-display text-base font-bold"
+            >
               Rincian bunyi{" "}
               <span className="font-ui text-xs font-normal text-[var(--text-2)]">
                 (contoh)
@@ -263,8 +348,29 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Catatan pelatih"
-      prototypeNote="Prototype terhubung ke Laragon PostgreSQL: mikrofon dan pemutar suara berfungsi nyata, penilaian ucapan memakai contoh data."
+      prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Kalimat latihan dimuat dari PostgreSQL Laragon sesuai tujuan belajarmu.`}
     >
+      {isFirstOnboardingStep && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border-2 border-[var(--coral)] bg-[var(--tile-coral)] px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <Badge variant="coral">Langkah 3 dari 3 · Latihan Pertama</Badge>
+            <p className="text-sm font-semibold text-[var(--text)]">
+              Ucapkan 1 kalimat di bawah ini, lalu klik{" "}
+              <strong>Selesai & Lihat Hasil Sesi</strong> untuk melihat progres
+              pertamamu tercatat di database!
+            </p>
+          </div>
+          <ol
+            aria-label="Langkah 3 dari 3"
+            className="flex w-28 items-center gap-1.5"
+          >
+            <li className="h-2 flex-1 rounded-full bg-[var(--coral)]" />
+            <li className="h-2 flex-1 rounded-full bg-[var(--coral)]" />
+            <li className="h-2 flex-1 rounded-full bg-[var(--coral)]" />
+          </ol>
+        </div>
+      )}
+
       {/* Topbar */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -275,7 +381,7 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
           </Button>
           <div>
             <p className="text-xs font-semibold text-[var(--text-2)]">
-              Latihan Ucapan
+              Latihan Ucapan · Level {current.cefrLevel}
             </p>
             <h1 className="font-display text-2xl font-extrabold">
               {current.category}
@@ -289,18 +395,48 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
             <Progress
               value={progressValue}
               tone="coral"
-              className="w-32"
-              aria-label={`Kalimat ${index + 4} dari 12`}
+              className="w-28"
+              aria-label={`Kalimat ${index + 1} dari ${totalInDeck}`}
             />
             <span
               className="text-xs font-semibold text-[var(--text-2)]"
               aria-live="polite"
             >
-              Kalimat {index + 4} dari 12
+              Kalimat {index + 1} dari {totalInDeck}
             </span>
           </div>
         </div>
       </header>
+
+      {/* Curriculum Goal Filter Bar */}
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        role="navigation"
+        aria-label="Filter paket kalimat berdasarkan tujuan belajar"
+      >
+        {GOAL_TABS.map((tab) => {
+          const isSelected =
+            (tab.id === "user" && activeGoal === (user.goals[0] ?? "harian")) ||
+            tab.id === activeGoal;
+          const href =
+            tab.id === "user"
+              ? "/latihan-ucapan"
+              : tab.id === "bank"
+              ? "/latihan-ucapan?source=bank"
+              : `/latihan-ucapan?goal=${tab.id}`;
+          return (
+            <Button
+              key={tab.id}
+              asChild
+              variant={isSelected ? "default" : "surface"}
+              size="sm"
+              className="min-h-[36px] rounded-pill px-3.5 text-xs"
+            >
+              <Link href={href}>{tab.label}</Link>
+            </Button>
+          );
+        })}
+      </div>
 
       {/* Reusable Editorial Proofreading Sentence Card */}
       <ProofreadingSentence
@@ -344,12 +480,11 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
             >
               Hasil kalimat ini{" "}
               <span className="font-ui text-xs font-normal text-[var(--text-2)]">
-                (contoh data)
+                (otomatis dicatat ke PostgreSQL Laragon)
               </span>
             </h2>
           </div>
 
-          {/* Prompt before recast (SLA research: Lyster & Saito 2010) */}
           <div className="rounded-card border-[1.5px] border-[var(--almost)] bg-[var(--almost-wash)] p-5">
             <h3 className="flex items-center gap-2 font-display text-lg font-bold text-[var(--text)]">
               <RotateCcw
@@ -410,7 +545,7 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
                 href="/bank-kesalahan"
                 className="font-bold text-[var(--link)] underline"
               >
-                Bank Kesalahan (PostgreSQL Laragon)
+                Bank Kesalahan
               </Link>
               .
             </p>
@@ -418,23 +553,41 @@ export function DrillWorkspace({ sentences }: DrillWorkspaceProps) {
         </section>
       )}
 
-      {/* Footer Navigation */}
+      {/* Footer Navigation & End-to-End Session Completion */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
         <Button
           type="button"
           variant="quiet"
-          onClick={() => resetSentenceState((index + 1) % sentences.length)}
+          onClick={() => resetSentenceState((index + 1) % totalInDeck)}
         >
           Lewati kalimat ini
         </Button>
-        <Button
-          type="button"
-          disabled={!showMarks}
-          onClick={() => resetSentenceState((index + 1) % sentences.length)}
-        >
-          <span>Kalimat berikutnya</span>
-          <ArrowRight className="h-5 w-5" aria-hidden="true" />
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {showMarks && (
+            <Button
+              type="button"
+              variant="accent"
+              disabled={finishingSession}
+              onClick={handleFinishSession}
+            >
+              <Check className="h-4 w-4" aria-hidden="true" />
+              <span>
+                {finishingSession
+                  ? "Menyimpan Sesi..."
+                  : "Selesai & Lihat Hasil Sesi (+3 mnt)"}
+              </span>
+            </Button>
+          )}
+          <Button
+            type="button"
+            disabled={!showMarks}
+            onClick={() => resetSentenceState((index + 1) % totalInDeck)}
+          >
+            <span>Kalimat berikutnya</span>
+            <ArrowRight className="h-5 w-5" aria-hidden="true" />
+          </Button>
+        </div>
       </div>
     </AppShell>
   );

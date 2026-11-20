@@ -32,21 +32,28 @@ c:\My things\Project\Ucapin\
 ├── src/
 │   ├── app/                        # Next.js App Router (HANYA routing & API endpoints)
 │   │   ├── api/v1/
+│   │   │   ├── auth/
+│   │   │   │   ├── login/route.ts    # POST autentikasi email/sandi atau 1-klik akun testing (set HTTP-only cookie)
+│   │   │   │   ├── register/route.ts # POST daftar akun pelajar baru (onboardingCompleted=false)
+│   │   │   │   ├── logout/route.ts   # POST hapus session cookie
+│   │   │   │   └── reset/route.ts    # POST reset database Laragon ke kondisi awal testing
 │   │   │   ├── dashboard/route.ts  # GET data Beranda dari PostgreSQL
 │   │   │   ├── mistakes/route.ts   # GET & POST item Bank Kesalahan (auto-upsert)
 │   │   │   ├── onboarding/route.ts # PATCH tujuan, CEFR, target menit, koreksi, opt-in UU PDP
+│   │   │   ├── sessions/route.ts   # POST simpan sesi latihan/roleplay baru, tambah menit harian, update liga & Bank Kesalahan
 │   │   │   └── session-result/route.ts # POST rating kepercayaan diri 1-5
 │   │   ├── bank-kesalahan/page.tsx # Halaman penuh Bank Kesalahan
 │   │   ├── cek-mikrofon/page.tsx   # Onboarding tes izin & level mikrofon
 │   │   ├── hasil/page.tsx          # Hasil Sesi (Session Result)
-│   │   ├── latihan-ucapan/page.tsx # Pronunciation Drill
+│   │   ├── latihan-ucapan/page.tsx # Pronunciation Drill (filter per tujuan belajar atau Bank Kesalahan)
+│   │   ├── masuk/page.tsx          # Login, Daftar Akun Baru, & Pintasan Testing E2E
 │   │   ├── mulai/page.tsx          # Onboarding tujuan & level CEFR
-│   │   ├── roleplay/page.tsx       # Scripted Roleplay (Memesan di kafe)
+│   │   ├── roleplay/page.tsx       # Scripted Roleplay (4 skenario sesuai tujuan belajar)
 │   │   ├── globals.css             # CSS Variables tema terang/gelap & @font-face
 │   │   ├── layout.tsx              # Root layout Bahasa Indonesia (lang="id")
 │   │   └── page.tsx                # Beranda (Dashboard)
 │   ├── components/
-│   │   ├── ui/                     # Primitif shadcn/ui (button, card, badge, progress, switch, separator)
+│   │   ├── ui/                     # Primitif shadcn/ui (button, card, badge, progress, switch, separator, input, label)
 │   │   ├── layout/                 # Kerangka halaman (app-shell, sidebar-nav, theme-toggle)
 │   │   └── shared/                 # Komponen domain reusable (bisa dipakai di mana saja):
 │   │       ├── audio-tts-button.tsx       # Tombol putar suara normal 1.0x & pelan 0.7x

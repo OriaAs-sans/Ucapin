@@ -7,12 +7,13 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Check,
   MessageSquare,
   Mic,
   Volume2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { PhoneticSpecimenCard } from "@/components/shared/phonetic-specimen-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { UserProfileDTO } from "@/types/ucapin";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,8 @@ const GOAL_OPTIONS = [
     id: "kerja",
     title: "Wawancara dan kerja",
     desc: "Perkenalan diri, rapat, presentasi singkat",
+    scenarioPreview: "Wawancara kerja di startup (bersama Rina, HR Lead)",
+    phonemeFocus: "Akhiran -ed (worked, solved), /θ/ (think), /v/ (version)",
     Icon: Mic,
     tileClass: "bg-[var(--tile-teal)] text-[var(--tile-teal-fg)]",
   },
@@ -29,13 +32,17 @@ const GOAL_OPTIONS = [
     id: "jalan",
     title: "Jalan-jalan ke luar negeri",
     desc: "Bandara, hotel, tanya arah",
+    scenarioPreview: "Check-in hotel di Singapura (bersama Liam, Resepsionis)",
+    phonemeFocus: "/ʃ/ (shuttle, station), -d akhir (card), /θ/ (third)",
     Icon: MessageSquare,
     tileClass: "bg-[var(--tile-coral)] text-[var(--tile-coral-fg)]",
   },
   {
     id: "ielts",
     title: "IELTS atau kuliah di luar negeri",
-    desc: "Latihan speaking test",
+    desc: "Latihan speaking test Part 1-3",
+    scenarioPreview: "Simulasi IELTS Speaking Part 1 (bersama Dr. Claire)",
+    phonemeFocus: "/θ/ (both, methods), -vd akhir (lived), /v/ (invest)",
     Icon: BookOpen,
     tileClass: "bg-[var(--tile-ochre)] text-[var(--tile-ochre-fg)]",
   },
@@ -43,6 +50,8 @@ const GOAL_OPTIONS = [
     id: "harian",
     title: "Ngobrol sehari-hari",
     desc: "Basa-basi, kafe, teman baru",
+    scenarioPreview: "Memesan di kafe Bean Corner (bersama Sam, Barista)",
+    phonemeFocus: "/v/ (very, visit), /ð/ (this, they), /θ/ (thank)",
     Icon: Volume2,
     tileClass: "bg-[var(--tile-green)] text-[var(--tile-green-fg)]",
   },
@@ -66,9 +75,9 @@ const MINUTE_OPTIONS = [
 export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
   const router = useRouter();
   const [goals, setGoals] = React.useState<string[]>(user.goals);
-  const [level, setLevel] = React.useState<string>(user.cefrLevel);
+  const [level, setLevel] = React.useState<string>(user.cefrLevel || "A2");
   const [minutes, setMinutes] = React.useState<number>(
-    user.dailyTargetMinutes
+    user.dailyTargetMinutes || 10
   );
   const [error, setError] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -82,6 +91,8 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
       return next;
     });
   };
+
+  const selectedGoalDetails = GOAL_OPTIONS.filter((g) => goals.includes(g.id));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,83 +114,133 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
     } finally {
       setSaving(false);
       router.push("/cek-mikrofon");
+      router.refresh();
     }
   };
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[420px_minmax(0,1fr)]">
-      {/* Left Brand Panel with Editorial Phonetic Specimen (No floating bubble overlap) */}
+      {/* Left Brand Panel: Real-time Curriculum Plan Summary (Zero random fake mistakes!) */}
       <aside className="flex flex-col justify-between gap-8 bg-[var(--side-bg)] p-7 text-[var(--side-text)] lg:p-10">
-        <Link href="/" className="text-[#F7F5EE] no-underline">
-          <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
-            Ucapin
-          </span>
-        </Link>
-
-        <div className="hidden lg:block">
-          <PhoneticSpecimenCard
-            variant="onboarding"
-            spokenMinutes={minutes}
-            targetMinutes={minutes}
-          />
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-[#F7F5EE] no-underline">
+            <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
+              Ucapin
+            </span>
+          </Link>
+          <Badge variant="teal">Langkah 1 / 3</Badge>
         </div>
 
-        <div>
-          <h2 className="font-display text-3xl font-extrabold text-[#F7F5EE]">
-            Bicara dulu, sempurna belakangan.
-          </h2>
-          <p className="mt-2 text-sm text-[var(--side-text)]">
-            Latihan 5 sampai 15 menit sehari. Kamu yang menentukan kapan
-            dikoreksi.
-          </p>
-          <div className="mt-5 hidden grid-cols-3 gap-2.5 lg:grid">
-            <div className="rounded-[14px] bg-[rgba(247,245,238,0.08)] p-3">
-              <b className="block font-display text-lg font-extrabold text-[#F7F5EE]">
-                5-15
-              </b>
-              <small className="text-xs text-[var(--side-text-2)]">
-                menit sehari
-              </small>
+        {/* Live Curriculum Preview Box driven by the user's selections */}
+        <div className="rounded-[18px] border border-[rgba(212,200,183,0.32)] bg-[rgba(19,41,46,0.55)] p-5 text-[#F7F5EE]">
+          <div className="flex items-center justify-between border-b border-[rgba(212,200,183,0.22)] pb-3">
+            <div>
+              <p className="text-xs font-bold text-[#D4C8B7]">
+                Rencana Belajar Akun
+              </p>
+              <p className="font-display text-lg font-bold text-[#F7F5EE]">
+                {user.name} ({user.email})
+              </p>
             </div>
-            <div className="rounded-[14px] bg-[rgba(247,245,238,0.08)] p-3">
-              <b className="block font-display text-lg font-extrabold text-[#F7F5EE]">
-                4
-              </b>
-              <small className="text-xs text-[var(--side-text-2)]">
-                mode latihan
-              </small>
+            <span className="rounded-[8px] bg-[rgba(255,122,89,0.2)] px-2.5 py-1 font-display text-xs font-extrabold text-[#FF9B80]">
+              Level {level}
+            </span>
+          </div>
+
+          <div className="mt-3.5 grid gap-3 text-xs">
+            <div>
+              <p className="font-bold text-[#D4C8B7]">
+                Tujuan yang kamu pilih ({selectedGoalDetails.length}):
+              </p>
+              {selectedGoalDetails.length > 0 ? (
+                <ul className="mt-1.5 grid gap-2">
+                  {selectedGoalDetails.map((g) => (
+                    <li
+                      key={g.id}
+                      className="rounded-[10px] border border-[rgba(212,200,183,0.2)] bg-[rgba(247,245,238,0.06)] p-2.5"
+                    >
+                      <p className="flex items-center gap-1.5 font-bold text-[#7CC7A0]">
+                        <Check className="h-3.5 w-3.5" />
+                        <span>{g.title}</span>
+                      </p>
+                      <p className="mt-1 text-[#E8E5D7]">
+                        <strong>Roleplay:</strong> {g.scenarioPreview}
+                      </p>
+                      <p className="mt-0.5 text-[#D4C8B7]">
+                        <strong>Fokus bunyi:</strong> {g.phonemeFocus}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1.5 rounded-[10px] border border-dashed border-[rgba(212,200,183,0.3)] p-3 text-[#D4C8B7]">
+                  Belum ada tujuan dipilih. Centang minimal satu tujuan di
+                  formulir sebelah kanan untuk menyusun paket latihanmu.
+                </p>
+              )}
             </div>
-            <div className="rounded-[14px] bg-[rgba(247,245,238,0.08)] p-3">
-              <b className="block font-display text-lg font-extrabold text-[#F7F5EE]">
-                A1-C1
-              </b>
-              <small className="text-xs text-[var(--side-text-2)]">
-                semua level
-              </small>
+
+            <div className="border-t border-[rgba(212,200,183,0.2)] pt-3">
+              <div className="flex items-center justify-between text-[11px] text-[#D4C8B7]">
+                <span>Progres bicara hari ini</span>
+                <span className="font-display font-bold tabular-nums text-[#F7F5EE]">
+                  {user.spokenTodayMinutes} / {minutes} mnt
+                </span>
+              </div>
+              <div
+                className="mt-1.5 grid gap-1"
+                style={{
+                  gridTemplateColumns: `repeat(${minutes}, minmax(0, 1fr))`,
+                }}
+              >
+                {Array.from({ length: minutes }).map((_, i) => (
+                  <i
+                    key={i}
+                    className={cn(
+                      "block h-2.5 rounded-[3px] border",
+                      i < user.spokenTodayMinutes
+                        ? "border-[var(--coral)] bg-[var(--coral)]"
+                        : "border-[rgba(212,200,183,0.28)] bg-[rgba(247,245,238,0.08)]"
+                    )}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
+
+        <div>
+          <h2 className="font-display text-2xl font-extrabold text-[#F7F5EE]">
+            Bicara dulu, sempurna belakangan.
+          </h2>
+          <p className="mt-2 text-sm text-[var(--side-text)]">
+            Pilihan tujuanmu di langkah ini langsung menentukan kalimat Latihan
+            Ucapan dan skenario Roleplay yang dimuat dari PostgreSQL Laragon.
+          </p>
+        </div>
       </aside>
 
-      {/* Right Form Panel */}
-      <main id="main-content" className="flex max-w-4xl flex-col gap-7 p-6 sm:p-10">
+      {/* Right Form Panel: Step 1 of 3 */}
+      <main
+        id="main-content"
+        className="flex max-w-4xl flex-col gap-7 p-6 sm:p-10"
+      >
         <div className="flex items-center gap-4">
           <Button asChild variant="quiet" size="sm">
-            <Link href="/" aria-label="Kembali ke Beranda">
+            <Link href="/masuk" aria-label="Kembali ke halaman Masuk">
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Link>
           </Button>
           <ol
-            aria-label="Langkah 2 dari 4"
-            className="grid flex-1 grid-cols-4 gap-1.5"
+            aria-label="Langkah 1 dari 3"
+            className="grid flex-1 grid-cols-3 gap-2"
           >
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
-            <li className="h-2 rounded-full bg-[var(--line)]" />
-            <li className="h-2 rounded-full bg-[var(--line)]" />
+            <li className="h-2.5 rounded-full bg-[var(--coral)]" />
+            <li className="h-2.5 rounded-full bg-[var(--line)]" />
+            <li className="h-2.5 rounded-full bg-[var(--line)]" />
           </ol>
-          <span className="text-xs font-semibold text-[var(--text-2)]">
-            Langkah 2 dari 4
+          <span className="text-xs font-bold text-[var(--text)]">
+            Langkah 1 dari 3 · Tujuan Belajar
           </span>
           <ThemeToggle onLightSurface />
         </div>
@@ -189,15 +250,15 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
             Kamu ingin bisa bicara bahasa Inggris untuk apa?
           </h1>
           <p className="mt-2 text-sm text-[var(--text-2)]">
-            Kami pilihkan roleplay dan kosakata yang cocok. Disimpan langsung ke
-            profilmu di database Laragon.
+            Pilih satu atau lebih tujuan. Kurikulum kalimat dan skenario
+            roleplay akan disesuaikan dengan pilihanmu.
           </p>
         </header>
 
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-7">
           <fieldset>
             <legend className="mb-3 font-display text-lg font-bold">
-              Tujuan (boleh lebih dari satu)
+              Tujuan belajar (pilih minimal satu)
             </legend>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {GOAL_OPTIONS.map((g) => {
@@ -243,14 +304,14 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
                 role="alert"
                 className="mt-2 text-sm font-bold text-[var(--work-text)]"
               >
-                Pilih minimal satu tujuan dulu ya.
+                Pilih minimal satu tujuan belajar terlebih dahulu.
               </p>
             )}
           </fieldset>
 
           <fieldset>
             <legend className="mb-3 font-display text-lg font-bold">
-              Seberapa nyaman kamu bicara bahasa Inggris?
+              Seberapa nyaman kamu bicara bahasa Inggris saat ini?
             </legend>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               {LEVEL_OPTIONS.map((lv) => (
@@ -321,12 +382,14 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
           </fieldset>
 
           <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t-[1.5px] border-[var(--line)] pt-5">
-            <Link href="/" className="text-sm font-semibold underline">
-              Lewati dulu
+            <Link href="/masuk" className="text-sm font-semibold underline">
+              Ganti akun
             </Link>
             <Button type="submit" disabled={saving}>
               <span>
-                {saving ? "Menyimpan..." : "Lanjut ke cek mikrofon"}
+                {saving
+                  ? "Menyimpan ke Database..."
+                  : "Simpan & Lanjut ke Cek Mikrofon (Langkah 2/3)"}
               </span>
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Button>

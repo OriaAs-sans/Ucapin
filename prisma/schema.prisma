@@ -8,32 +8,50 @@ datasource db {
 }
 
 model User {
-  id                 String            @id @default(cuid())
-  name               String
-  initials           String
-  cefrLevel          String            @default("B1")
-  cefrProgressLabel  String            @default("A2+ menuju B1")
-  cefrProgressPct    Int               @default(70)
-  goals              String[]          @default(["kerja", "harian"])
-  dailyTargetMinutes Int               @default(15)
-  spokenTodayMinutes Int               @default(9)
-  totalSpokenMinutes Int               @default(186)
-  clarityAvg         Int               @default(82)
-  streakDays         Int               @default(12)
-  streakFreezes      Int               @default(2)
-  correctionPref     String            @default("giliran")
-  saveAudioOptIn     Boolean           @default(false)
-  consentDate        DateTime          @default(now())
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id                  String            @id @default(cuid())
+  email               String            @unique
+  password            String            @default("ucapin123")
+  name                String
+  initials            String
+  roleLabel           String            @default("Pelajar")
+  cefrLevel           String            @default("B1")
+  cefrProgressLabel   String            @default("A2+ menuju B1")
+  cefrProgressPct     Int               @default(70)
+  goals               String[]          @default(["kerja", "harian"])
+  dailyTargetMinutes  Int               @default(15)
+  spokenTodayMinutes  Int               @default(0)
+  totalSpokenMinutes  Int               @default(0)
+  clarityAvg          Int               @default(0)
+  streakDays          Int               @default(0)
+  streakFreezes       Int               @default(2)
+  correctionPref      String            @default("giliran")
+  saveAudioOptIn      Boolean           @default(false)
+  onboardingCompleted Boolean           @default(false)
+  micChecked          Boolean           @default(false)
+  activeScenarioSlug  String            @default("memesan-di-kafe")
+  consentDate         DateTime          @default(now())
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-  sessions           SpeakingSession[]
-  mistakes           MistakeItem[]
-  dailyActivities    DailyActivity[]
+  sessions            SpeakingSession[]
+  mistakes            MistakeItem[]
+  dailyActivities     DailyActivity[]
+}
+
+model PhonemeGuide {
+  id                    String @id @default(cuid())
+  phoneme               String @unique
+  errorPattern          String
+  title                 String
+  description           String
+  articulationStepsJson String
+  minimalPairsJson      String
 }
 
 model DrillSentence {
-  id                   String   @id @default(cuid())
+  id                   String @id @default(cuid())
+  goalTag              String @default("harian")
+  cefrLevel            String @default("B1")
   category             String
   focusPhonemes        String
   text                 String
@@ -53,6 +71,7 @@ model DrillSentence {
 model Scenario {
   id                String         @id @default(cuid())
   slug              String         @unique
+  goalTag           String         @default("harian")
   title             String
   category          String
   cefrLevel         String
@@ -142,13 +161,13 @@ model MistakeItem {
 }
 
 model DailyActivity {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   dayOrder      Int
   dayLabel      String
   minutesSpoken Int
-  isToday       Boolean  @default(false)
+  isToday       Boolean @default(false)
 }
 
 model LeagueEntry {

@@ -2,8 +2,16 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Mic, MessageSquare, BookOpen } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Home,
+  Mic,
+  MessageSquare,
+  BookOpen,
+  LogIn,
+  LogOut,
+  SlidersHorizontal,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +24,13 @@ const navItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
+    router.push("/masuk");
+    router.refresh();
+  };
 
   return (
     <aside
@@ -23,10 +38,7 @@ export function SidebarNav() {
       className="flex flex-col justify-between gap-6 bg-[var(--side-bg)] px-4 py-6 text-[var(--side-text)] lg:sticky lg:top-0 lg:h-screen"
     >
       <div className="flex flex-wrap items-center justify-between gap-4 lg:flex-col lg:items-stretch lg:gap-8">
-        <Link
-          href="/"
-          className="block px-3 text-[#F7F5EE] no-underline"
-        >
+        <Link href="/" className="block px-3 text-[#F7F5EE] no-underline">
           <span className="font-display text-[1.75rem] font-extrabold leading-none tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
             Ucapin
           </span>
@@ -71,31 +83,51 @@ export function SidebarNav() {
           })}
 
           <div className="mt-4 hidden px-4 pb-1 text-xs font-semibold text-[var(--side-text-2)] lg:block">
+            Alur & Akun
+          </div>
+          <Link
+            href="/mulai"
+            className="flex min-h-[42px] items-center gap-3 whitespace-nowrap rounded-control px-4 text-sm font-semibold text-[var(--side-text)] no-underline transition-all hover:bg-[rgba(232,229,215,0.08)]"
+          >
+            <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Tujuan Belajar</span>
+          </Link>
+          <Link
+            href="/masuk"
+            className="flex min-h-[42px] items-center gap-3 whitespace-nowrap rounded-control px-4 text-sm font-semibold text-[var(--side-text)] no-underline transition-all hover:bg-[rgba(232,229,215,0.08)]"
+          >
+            <LogIn className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Ganti Akun / Masuk</span>
+          </Link>
+
+          <div className="mt-3 hidden px-4 pb-1 text-xs font-semibold text-[var(--side-text-2)] lg:block">
             Segera hadir
           </div>
-          <span className="hidden min-h-[42px] items-center justify-between px-4 text-sm font-semibold text-[var(--side-text-2)] lg:flex">
+          <span className="hidden min-h-[38px] items-center justify-between px-4 text-xs font-semibold text-[var(--side-text-2)] lg:flex">
             <span>Shadowing</span>
-            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[11px]">
+            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[10px]">
               Segera
             </small>
           </span>
-          <span className="hidden min-h-[42px] items-center justify-between px-4 text-sm font-semibold text-[var(--side-text-2)] lg:flex">
+          <span className="hidden min-h-[38px] items-center justify-between px-4 text-xs font-semibold text-[var(--side-text-2)] lg:flex">
             <span>Speaking Test</span>
-            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[11px]">
+            <small className="rounded-pill border border-[rgba(212,200,183,0.35)] px-2 py-0.5 text-[10px]">
               Segera
             </small>
           </span>
         </nav>
       </div>
 
-      <div className="flex items-center justify-between gap-3 px-3 text-sm lg:grid lg:justify-start">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-3 text-sm lg:grid lg:justify-start">
         <ThemeToggle />
-        <Link
-          href="/mulai"
-          className="hidden text-sm text-[var(--side-text)] underline underline-offset-4 lg:inline-block"
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 text-left text-xs font-semibold text-[var(--side-text-2)] underline underline-offset-4 hover:text-[#F7F5EE]"
         >
-          Atur ulang tujuan belajar
-        </Link>
+          <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Keluar ke halaman Login</span>
+        </button>
       </div>
     </aside>
   );

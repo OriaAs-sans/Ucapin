@@ -1,20 +1,113 @@
-# Environment Variables
+# =============================================================================
+# 1. Environment Variables & Secrets
+# =============================================================================
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.*.local
 
-# Dependencies & Build
+# =============================================================================
+# 2. Dependencies & Build Outputs
+# =============================================================================
 node_modules/
 .next/
 out/
 dist/
 build/
+coverage/
 tsconfig.tsbuildinfo
+next-env.d.ts
 
-# Local Design References (not committed)
-references/awesome-design-md/
+# =============================================================================
+# 3. Photos, Screenshots, & Media (Not needed on GitHub)
+# =============================================================================
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tiff
+*.tif
+*.heic
+*.raw
+*.psd
+*.ai
+*.eps
+*.fig
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.flac
+*.webm
+*.mp4
+*.mov
+*.avi
+*.mkv
 
-# OS & Editor
+# Keep essential vector icons in public/ and prototype/
+!public/**/*.svg
+!prototype/assets/**/*.svg
+
+# =============================================================================
+# 4. Documents, Excel, Word, PowerPoint, PDF & Archives
+# =============================================================================
+*.doc
+*.docx
+*.odt
+*.rtf
+*.xls
+*.xlsx
+*.xlsm
+*.xlsb
+*.csv
+*.ods
+*.ppt
+*.pptx
+*.odp
+*.pdf
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.tgz
+
+# =============================================================================
+# 5. Local Design References, Review Captures & Skill Gates
+# =============================================================================
+references/
+.impeccable/review/
+.impeccable/mocks/
+.taste-skill/
+prototype/.taste-skill/
+shots/
+
+# =============================================================================
+# 6. Graphify Local Machine Paths & Cache
+# =============================================================================
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_*.json
+graphify-out/.graphify_*.txt
+graphify-out/cache/
+
+# =============================================================================
+# 7. OS, Editor & Logs
+# =============================================================================
 .DS_Store
 Thumbs.db
+Desktop.ini
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo

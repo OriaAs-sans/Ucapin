@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -17,7 +18,7 @@ import { PhoneticWordRow } from "@/components/shared/phonetic-word-row";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { ScenarioDTO } from "@/types/ucapin";
+import type { ScenarioDTO, UserProfileDTO } from "@/types/ucapin";
 import { cn } from "@/lib/utils";
 
 interface ChatTurn {
@@ -35,14 +36,22 @@ interface ChatTurn {
 }
 
 export interface RoleplayWorkspaceProps {
+  user: UserProfileDTO;
   scenario: ScenarioDTO;
+  allScenarios: Pick<
+    ScenarioDTO,
+    "slug" | "goalTag" | "title" | "category" | "cefrLevel" | "characterName"
+  >[];
   initialCorrectionPref?: string;
 }
 
 export function RoleplayWorkspace({
+  user,
   scenario,
+  allScenarios,
   initialCorrectionPref = "giliran",
 }: RoleplayWorkspaceProps) {
+  const router = useRouter();
   const [stepIndex, setStepIndex] = React.useState(0);
   const [micState, setMicState] = React.useState<MicState>("idle");
   const [selectedHint, setSelectedHint] = React.useState<string | null>(null);
@@ -50,49 +59,40 @@ export function RoleplayWorkspace({
     initialCorrectionPref
   );
   const [completedMissions, setCompletedMissions] = React.useState(1);
-  const [elapsedSec, setElapsedSec] = React.useState(192);
+  const [elapsedSec, setElapsedSec] = React.useState(165);
+  const [savingSession, setSavingSession] = React.useState(false);
   const [openTranslations, setOpenTranslations] = React.useState<
     Record<string, boolean>
   >({});
 
-  const [turns, setTurns] = React.useState<ChatTurn[]>([
-    {
-      id: "turn-init-1",
-      who: "char",
-      speakerLabel: scenario.characterName,
-      text: "Hi there! Welcome to Bean Corner. What can I get for you today?",
-      translation:
-        "Halo! Selamat datang di Bean Corner. Mau pesan apa hari ini?",
-    },
-    {
-      id: "turn-init-2",
-      who: "me",
-      speakerLabel: "Kamu",
-      text: "I want a ice latte, medium size.",
-      correction: {
-        title: "Hampir! Ada 2 hal kecil, coba ucapkan lagi.",
-        chips: ["a → an", "ice → iced", "lebih sopan"],
+  const buildInitialTurns = React.useCallback(
+    (sc: ScenarioDTO): ChatTurn[] => [
+      {
+        id: `turn-init-${sc.slug}-1`,
+        who: "char",
+        speakerLabel: `${sc.characterName}, ${sc.characterRole}`,
+        text:
+          sc.nodes[0]?.speakerLine ??
+          "Hi there! Welcome. How can I help you today?",
+        translation:
+          sc.nodes[0]?.translation ??
+          "Halo! Selamat datang. Ada yang bisa saya bantu hari ini?",
       },
-    },
-    {
-      id: "turn-init-3",
-      who: "me",
-      speakerLabel: "Kamu, percobaan kedua",
-      text: "Could I get an iced latte, medium, please?",
-      okTag: "Natural dan sopan",
-    },
-    {
-      id: "turn-init-4",
-      who: "char",
-      speakerLabel: scenario.characterName,
-      text:
-        scenario.nodes[0]?.speakerLine ??
-        "Sure! Anything to eat with that? Our croissants just came out of the oven.",
-      translation:
-        scenario.nodes[0]?.translation ??
-        "Tentu! Mau makan sesuatu juga? Croissant kami baru keluar dari oven.",
-    },
-  ]);
+    ],
+    []
+  );
+
+  const [turns, setTurns] = React.useState<ChatTurn[]>(() =>
+    buildInitialTurns(scenario)
+  );
+
+  React.useEffect(() => {
+    setStepIndex(0);
+    setMicState("idle");
+    setSelectedHint(null);
+    setCompletedMissions(1);
+    setTurns(buildInitialTurns(scenario));
+  }, [scenario, buildInitialTurns]);
 
   React.useEffect(() => {
     const timer = window.setInterval(() => {
@@ -108,6 +108,73 @@ export function RoleplayWorkspace({
     const m = String(Math.floor(sec / 60)).padStart(2, "0");
     const s = String(sec % 60).padStart(2, "0");
     return `${m}:${s}`;
+  };
+
+  const handleCompleteAndViewResult = async () => {
+    setSavingSession(true);
+    try {
+      const myUtterances = turns
+        .filter((t) => t.who === "me")
+        .map((t) => ({
+          referenceText: t.text,
+          transcript: t.text,
+          betterVersion: t.correction ? `${t.text} (perjelas konsonan)` : null,
+          status: (t.correction ? "almost" : "ok") as "almost" | "ok",
+          note: t.correction?.title ?? "Sudah jelas dan natural",
+          clarityScore: t.correction ? 79 : 91,
+        }));
+
+      const mistakesFromNodes = scenario.nodes
+        .filter((n) => n.sampleCorrection)
+        .map((n) => ({
+          word: n.sampleCorrection!.word,
+          ipa: n.sampleCorrection!.ipa,
+          phoneme: n.sampleCorrection!.phoneme,
+          errorPattern: n.sampleCorrection!.errorPattern,
+          heardAs: n.sampleCorrection!.detailText,
+          status: n.sampleCorrection!.status,
+        }));
+
+      const res = await fetch("/api/v1/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "roleplay",
+          scenarioTitle: scenario.title,
+          durationSec: elapsedSec,
+          addedMinutes: 5,
+          clarityScore: 86,
+          pronunciationScore: 83,
+          fluencyScore: 88,
+          grammarScore: 82,
+          vocabularyScore: 91,
+          utterances:
+            myUtterances.length > 0
+              ? myUtterances
+              : [
+                  {
+                    referenceText:
+                      scenario.nodes[0]?.hints[0] ?? "Yes, please.",
+                    transcript: scenario.nodes[0]?.hints[0] ?? "Yes, please.",
+                    betterVersion: null,
+                    status: "ok",
+                    note: "Sudah jelas dan sopan",
+                    clarityScore: 88,
+                  },
+                ],
+          mistakes: mistakesFromNodes,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok && data.redirectTo) {
+        router.push(data.redirectTo);
+        router.refresh();
+        return;
+      }
+    } finally {
+      setSavingSession(false);
+    }
+    router.push("/hasil");
   };
 
   const submitTurn = React.useCallback(async () => {
@@ -130,6 +197,7 @@ export function RoleplayWorkspace({
             detail: sampleCorr.detailText,
           }
         : undefined,
+      okTag: !sampleCorr ? "Jelas dan natural" : undefined,
     };
 
     if (sampleCorr) {
@@ -141,7 +209,7 @@ export function RoleplayWorkspace({
           ipa: sampleCorr.ipa,
           phoneme: sampleCorr.phoneme,
           errorPattern: sampleCorr.errorPattern,
-          heardAs: "bunyi akhir belum terdengar jelas",
+          heardAs: sampleCorr.detailText,
           sourceMode: `Roleplay: ${scenario.title}`,
           status: sampleCorr.status,
         }),
@@ -180,7 +248,7 @@ export function RoleplayWorkspace({
           viewBox="0 0 120 80"
           width="124"
           role="img"
-          aria-label="Ilustrasi secangkir kopi"
+          aria-label="Ilustrasi skenario roleplay"
         >
           <ellipse cx="54" cy="70" rx="40" ry="6" fill="#D4C8B7" />
           <path
@@ -214,7 +282,7 @@ export function RoleplayWorkspace({
 
       <section aria-labelledby="missions-heading">
         <h2 id="missions-heading" className="font-display text-lg font-bold">
-          Misimu
+          Misimu (3 tugas)
         </h2>
         <div className="mt-2.5 grid gap-2">
           {scenario.missions.map((m, idx) => {
@@ -244,9 +312,7 @@ export function RoleplayWorkspace({
                   )}
                 </span>
                 <span
-                  className={cn(
-                    isDone && "line-through text-[var(--text-2)]"
-                  )}
+                  className={cn(isDone && "line-through text-[var(--text-2)]")}
                 >
                   {m}
                 </span>
@@ -315,27 +381,6 @@ export function RoleplayWorkspace({
           ))}
         </div>
       </fieldset>
-
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="grid justify-items-center rounded-[16px] bg-[var(--tile-teal)] p-3 text-center">
-          <b className="font-display text-xl font-extrabold text-[var(--text)]">
-            {46 + stepIndex * 6}
-          </b>
-          <small className="text-xs text-[var(--text-2)]">kata</small>
-        </div>
-        <div className="grid justify-items-center rounded-[16px] bg-[var(--tile-green)] p-3 text-center">
-          <b className="font-display text-xl font-extrabold text-[var(--text)]">
-            1:{48 + stepIndex * 12}
-          </b>
-          <small className="text-xs text-[var(--text-2)]">kamu bicara</small>
-        </div>
-        <div className="grid justify-items-center rounded-[16px] bg-[var(--tile-ochre)] p-3 text-center">
-          <b className="font-display text-xl font-extrabold text-[var(--text)]">
-            {1 + (stepIndex > 1 ? 1 : 0)}
-          </b>
-          <small className="text-xs text-[var(--text-2)]">koreksi</small>
-        </div>
-      </div>
     </>
   );
 
@@ -343,7 +388,7 @@ export function RoleplayWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Misi dan bantuan roleplay"
-      prototypeNote="Prototype terhubung ke Laragon PostgreSQL: dialog berskrip (MVP tanpa LLM), kesalahan ucapan otomatis masuk Bank Kesalahan."
+      prototypeNote={`Aktif sebagai ${user.name} · Skenario roleplay menyesuaikan tujuan belajar (${scenario.category}).`}
     >
       {/* Topbar */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -374,11 +419,41 @@ export function RoleplayWorkspace({
               {formatTimer(elapsedSec)}
             </span>
           </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/hasil">Akhiri</Link>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={savingSession}
+            onClick={handleCompleteAndViewResult}
+          >
+            {savingSession ? "Menyimpan..." : "Akhiri & Simpan Hasil"}
           </Button>
         </div>
       </header>
+
+      {/* Scenario Switcher across All 4 Goals */}
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        role="navigation"
+        aria-label="Pilih skenario roleplay"
+      >
+        {allScenarios.map((sc) => {
+          const active = sc.slug === scenario.slug;
+          return (
+            <Button
+              key={sc.slug}
+              asChild
+              variant={active ? "default" : "surface"}
+              size="sm"
+              className="min-h-[36px] rounded-pill px-3.5 text-xs"
+            >
+              <Link href={`/roleplay?slug=${sc.slug}`}>
+                {sc.title} ({sc.characterName})
+              </Link>
+            </Button>
+          );
+        })}
+      </div>
 
       {/* Conversation Card */}
       <Card className="p-6">
@@ -436,7 +511,6 @@ export function RoleplayWorkspace({
                   {turn.text}
                 </p>
 
-                {/* Turn Tools */}
                 <div
                   className={cn(
                     "mt-2 flex flex-wrap gap-2",
@@ -499,19 +573,6 @@ export function RoleplayWorkspace({
                         {turn.correction.detail}
                       </p>
                     )}
-                    {turn.correction.chips && (
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {turn.correction.chips.map((c) => (
-                          <Badge
-                            key={c}
-                            variant="ochre"
-                            className="bg-[var(--surface)]"
-                          >
-                            {c}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -565,11 +626,19 @@ export function RoleplayWorkspace({
               <span>Semua misi beres!</span>
             </h3>
             <p className="mt-1 text-sm text-[var(--text)]">
-              Lihat ringkasan sesi dan kata yang masuk Bank Kesalahan.
+              Simpan hasil sesi ini ke database Laragon untuk menambah +5 menit
+              bicaramu hari ini dan melihat kata yang masuk Bank Kesalahan.
             </p>
             <div className="mt-3.5">
-              <Button asChild variant="accent">
-                <Link href="/hasil">Lihat hasil sesi</Link>
+              <Button
+                type="button"
+                variant="accent"
+                disabled={savingSession}
+                onClick={handleCompleteAndViewResult}
+              >
+                {savingSession
+                  ? "Menyimpan Sesi..."
+                  : "Simpan & Lihat Hasil Sesi (+5 mnt)"}
               </Button>
             </div>
           </div>

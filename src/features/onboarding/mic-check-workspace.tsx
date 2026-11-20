@@ -3,14 +3,28 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Mic, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Mic,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { PhoneticSpecimenCard } from "@/components/shared/phonetic-specimen-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import type { UserProfileDTO } from "@/types/ucapin";
 import { mapMicError, type MicErrorInfo, cn } from "@/lib/utils";
+
+const GOAL_NAMES: Record<string, string> = {
+  kerja: "Wawancara dan kerja",
+  jalan: "Jalan-jalan ke luar negeri",
+  ielts: "IELTS & Kuliah",
+  harian: "Ngobrol sehari-hari",
+};
 
 export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
   const router = useRouter();
@@ -26,6 +40,7 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
   );
   const [saveAudio, setSaveAudio] = React.useState(user.saveAudioOptIn);
   const [startError, setStartError] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
 
   const streamRef = React.useRef<MediaStream | null>(null);
   const ctxRef = React.useRef<AudioContext | null>(null);
@@ -117,73 +132,134 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
     }
   };
 
-  const handleFinish = async () => {
-    await fetch("/api/v1/onboarding", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        correctionPref,
-        saveAudioOptIn: saveAudio,
-      }),
-    }).catch(() => {});
-
-    stopMic();
-    router.push("/latihan-ucapan");
+  const handleFinish = async (destination: string) => {
+    setSaving(true);
+    try {
+      await fetch("/api/v1/onboarding", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          correctionPref,
+          saveAudioOptIn: saveAudio,
+          onboardingCompleted: true,
+          micChecked: true,
+        }),
+      });
+    } finally {
+      setSaving(false);
+      stopMic();
+      router.push(destination);
+      router.refresh();
+    }
   };
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[420px_minmax(0,1fr)]">
-      {/* Left Brand Panel */}
+      {/* Left Brand Panel: Real Account & Device Privacy Summary (Zero random fake mistakes!) */}
       <aside className="flex flex-col justify-between gap-8 bg-[var(--side-bg)] p-7 text-[var(--side-text)] lg:p-10">
-        <Link href="/" className="text-[#F7F5EE] no-underline">
-          <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
-            Ucapin
-          </span>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-[#F7F5EE] no-underline">
+            <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
+              Ucapin
+            </span>
+          </Link>
+          <Badge variant="teal">Langkah 2 / 3</Badge>
+        </div>
 
-        <div className="hidden lg:block">
-          <PhoneticSpecimenCard
-            variant="onboarding"
-            word="think"
-            ipa="/θɪŋk/"
-            errorPattern="/θ/ → /t/"
-            heardAs="terdengar “tink”"
-            tip="Ujung lidah ringan di antara gigi atas dan bawah, hembuskan udara."
-            spokenMinutes={user.spokenTodayMinutes}
-            targetMinutes={user.dailyTargetMinutes}
-          />
+        <div className="rounded-[18px] border border-[rgba(212,200,183,0.32)] bg-[rgba(19,41,46,0.55)] p-5 text-[#F7F5EE]">
+          <div className="flex items-center justify-between border-b border-[rgba(212,200,183,0.22)] pb-3">
+            <div>
+              <p className="text-xs font-bold text-[#D4C8B7]">
+                Profil Tersimpan di Database
+              </p>
+              <p className="font-display text-lg font-bold text-[#F7F5EE]">
+                {user.name}
+              </p>
+            </div>
+            <span className="rounded-[8px] bg-[rgba(124,199,160,0.18)] px-2.5 py-1 text-xs font-bold text-[#7CC7A0]">
+              Level {user.cefrLevel}
+            </span>
+          </div>
+
+          <div className="mt-3.5 grid gap-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[#D4C8B7]">Tujuan aktif:</span>
+              <strong className="text-[#F7F5EE]">
+                {user.goals.length > 0
+                  ? user.goals.map((g) => GOAL_NAMES[g] ?? g).join(", ")
+                  : "Umum"}
+              </strong>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#D4C8B7]">Target harian:</span>
+              <strong className="text-[#F7F5EE]">
+                {user.spokenTodayMinutes} / {user.dailyTargetMinutes} menit
+              </strong>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[#D4C8B7]">Status mikrofon:</span>
+              <strong
+                className={cn(
+                  verdict === "ok" ? "text-[#7CC7A0]" : "text-[#E3B95E]"
+                )}
+              >
+                {verdict === "ok"
+                  ? "Siap digunakan"
+                  : permissionState === "granted"
+                  ? "Menunggu tes suara"
+                  : "Belum diizinkan"}
+              </strong>
+            </div>
+            <div className="mt-1 rounded-[10px] border border-[rgba(212,200,183,0.2)] bg-[rgba(247,245,238,0.06)] p-2.5 text-[#D4C8B7]">
+              <p className="flex items-center gap-1.5 font-bold text-[#F7F5EE]">
+                <ShieldCheck className="h-4 w-4 text-[#7CC7A0]" />
+                <span>Jaminan Privasi UU PDP No. 27/2022</span>
+              </p>
+              <p className="mt-1">
+                Audio hanya dipakai untuk mendeteksi kejelasan fonem dan{" "}
+                <strong>
+                  {saveAudio
+                    ? "disimpan karena kamu memilih opt-in"
+                    : "langsung dibuang setelah dinilai (default)"}
+                </strong>
+                .
+              </p>
+            </div>
+          </div>
         </div>
 
         <div>
-          <h2 className="font-display text-3xl font-extrabold text-[#F7F5EE]">
+          <h2 className="font-display text-2xl font-extrabold text-[#F7F5EE]">
             Suaramu, kendalimu.
           </h2>
           <p className="mt-2 text-sm text-[var(--side-text)]">
-            Kami minta izin mikrofon setelah kamu paham alasannya, bukan
-            sebelumnya. Rekaman suara tidak disimpan secara default (UU PDP).
+            Kami minta izin mikrofon setelah kamu paham alasannya. Setelah ini
+            kamu langsung masuk ke Langkah 3 (Latihan Pertama).
           </p>
         </div>
       </aside>
 
-      {/* Right Mic Check Content */}
-      <main id="main-content" className="flex max-w-4xl flex-col gap-6 p-6 sm:p-10">
+      {/* Right Mic Check Content: Step 2 of 3 */}
+      <main
+        id="main-content"
+        className="flex max-w-4xl flex-col gap-6 p-6 sm:p-10"
+      >
         <div className="flex items-center gap-4">
           <Button asChild variant="quiet" size="sm">
-            <Link href="/mulai" aria-label="Kembali ke langkah sebelumnya">
+            <Link href="/mulai" aria-label="Kembali ke Langkah 1 (Tujuan)">
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Link>
           </Button>
           <ol
-            aria-label="Langkah 4 dari 4"
-            className="grid flex-1 grid-cols-4 gap-1.5"
+            aria-label="Langkah 2 dari 3"
+            className="grid flex-1 grid-cols-3 gap-2"
           >
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
-            <li className="h-2 rounded-full bg-[var(--coral)]" />
+            <li className="h-2.5 rounded-full bg-[var(--coral)]" />
+            <li className="h-2.5 rounded-full bg-[var(--coral)]" />
+            <li className="h-2.5 rounded-full bg-[var(--line)]" />
           </ol>
-          <span className="text-xs font-semibold text-[var(--text-2)]">
-            Langkah 4 dari 4
+          <span className="text-xs font-bold text-[var(--text)]">
+            Langkah 2 dari 3 · Cek Mikrofon
           </span>
           <ThemeToggle onLightSurface />
         </div>
@@ -193,7 +269,8 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
             Cek mikrofon dulu
           </h1>
           <p className="mt-2 text-sm text-[var(--text-2)]">
-            Sekitar 20 detik. Sekalian kami pastikan suaramu tertangkap jelas.
+            Sekitar 20 detik. Kita pastikan suaramu tertangkap jelas sebelum
+            masuk ke latihan pertama.
           </p>
         </header>
 
@@ -235,7 +312,7 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
                   setStartError(false);
                 }}
               >
-                Simulasikan mikrofon siap
+                Simulasikan mikrofon siap (Mode Testing)
               </Button>
             </div>
           )}
@@ -267,7 +344,7 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
               <p className="mt-1 text-sm">{errorInfo.body}</p>
               {errorInfo.isBlocked && (
                 <div className="mt-3">
-                  <h4 className="font-bold text-sm">Cara membuka blokir:</h4>
+                  <h4 className="text-sm font-bold">Cara membuka blokir:</h4>
                   <ol className="mt-1 list-decimal space-y-1 pl-5 text-xs">
                     <li>Klik ikon gembok di samping alamat situs.</li>
                     <li>Buka Izin situs, lalu cari Mikrofon.</li>
@@ -332,7 +409,8 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
                   Suaramu terdengar jelas
                 </h3>
                 <p className="mt-0.5 text-sm">
-                  Mikrofon siap dipakai. Kamu bisa lanjut ke latihan pertama.
+                  Mikrofon siap dipakai. Kamu bisa lanjut ke Langkah 3 (Latihan
+                  Pertama).
                 </p>
               </div>
             )}
@@ -408,21 +486,31 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
         </label>
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t-[1.5px] border-[var(--line)] pt-5">
-          <Link href="/" className="text-sm font-semibold underline">
-            Saya belum bisa pakai mikrofon
-          </Link>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => handleFinish("/")}
+            className="text-sm font-semibold text-[var(--link)] underline"
+          >
+            Lanjut ke Beranda tanpa mikrofon
+          </button>
           <div className="grid justify-items-end gap-1.5">
             <Button
               type="button"
+              disabled={saving}
               onClick={() => {
                 if (verdict !== "ok") {
                   setStartError(true);
                   return;
                 }
-                handleFinish();
+                handleFinish("/latihan-ucapan?onboarding=1");
               }}
             >
-              <span>Mulai latihan pertama</span>
+              <span>
+                {saving
+                  ? "Menyimpan..."
+                  : "Mulai Latihan Pertama (Langkah 3/3)"}
+              </span>
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
             </Button>
             {startError && (
@@ -430,7 +518,8 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
                 role="alert"
                 className="text-xs font-bold text-[var(--work-text)]"
               >
-                Izinkan mikrofon (atau klik Simulasikan mikrofon siap) dulu ya.
+                Izinkan mikrofon (atau klik tombol Simulasikan mikrofon siap)
+                terlebih dahulu.
               </p>
             )}
           </div>

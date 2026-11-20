@@ -30,23 +30,30 @@ import { cn } from "@/lib/utils";
 
 export interface SessionResultWorkspaceProps {
   user: UserProfileDTO;
-  session: SpeakingSessionDTO;
+  session: SpeakingSessionDTO | null;
+  sessionHistory: {
+    id: string;
+    clarityScore: number;
+    mode: string;
+    scenarioTitle: string | null;
+  }[];
   mistakes: MistakeItemDTO[];
 }
 
 export function SessionResultWorkspace({
   user,
   session,
+  sessionHistory,
   mistakes,
 }: SessionResultWorkspaceProps) {
   const [confidence, setConfidence] = React.useState<number | null>(
-    session.confidenceRating
+    session?.confidenceRating ?? null
   );
-  const [confidenceFeedback, setConfidenceFeedback] = React.useState<string>(
-    ""
-  );
+  const [confidenceFeedback, setConfidenceFeedback] =
+    React.useState<string>("");
 
   const handleConfidenceSelect = async (val: number) => {
+    if (!session) return;
     setConfidence(val);
     const msg =
       val <= 2
@@ -54,7 +61,7 @@ export function SessionResultWorkspace({
         : val === 3
         ? "Oke. Kita ulangi bagian yang belum mantap besok."
         : "Mantap! Besok coba skenario yang sedikit lebih menantang.";
-    setConfidenceFeedback(`${msg} (Tersimpan ke Laragon PostgreSQL)`);
+    setConfidenceFeedback(`${msg} (Tersimpan ke PostgreSQL Laragon)`);
 
     try {
       await fetch("/api/v1/session-result", {
@@ -70,74 +77,91 @@ export function SessionResultWorkspace({
     }
   };
 
+  if (!session) {
+    return (
+      <AppShell
+        prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Data dimuat dari PostgreSQL Laragon.`}
+      >
+        <Card className="p-8 text-center">
+          <h1 className="font-display text-2xl font-extrabold">
+            Belum ada hasil sesi latihan
+          </h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-[var(--text-2)]">
+            Akun <strong>{user.name}</strong> belum menyelesaikan sesi Latihan
+            Ucapan atau Roleplay. Selesaikan satu sesi terlebih dahulu untuk
+            melihat analisis skor kejelasan dan kata yang masuk Bank Kesalahan.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button asChild variant="accent">
+              <Link href="/latihan-ucapan">Mulai Latihan Ucapan</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/roleplay">Mulai Roleplay</Link>
+            </Button>
+          </div>
+        </Card>
+      </AppShell>
+    );
+  }
+
+  const firstScore = sessionHistory[0]?.clarityScore ?? session.clarityScore;
+  const latestScore = session.clarityScore;
+  const deltaScore = latestScore - firstScore;
+  const durationMinutes = Math.floor(session.durationSec / 60);
+  const durationSeconds = session.durationSec % 60;
+  const clearUtteranceCount = session.utterances.filter(
+    (u) => u.status === "ok" || u.status === "almost"
+  ).length;
+
   const rightPanel = (
     <>
       <section aria-labelledby="trend-heading">
         <h2 id="trend-heading" className="font-display text-lg font-bold">
-          Kejelasan 7 sesi terakhir
+          Riwayat kejelasan ({sessionHistory.length} sesi)
         </h2>
-        <div className="mt-2.5 rounded-[18px] bg-[var(--surface-2)] p-4">
-          <svg
-            viewBox="0 0 280 110"
-            role="img"
-            aria-label="Kejelasan naik dari 62 ke 84 dalam 7 sesi"
-            className="h-auto w-full"
-          >
-            <line
-              x1="0"
-              y1="100"
-              x2="280"
-              y2="100"
-              stroke="var(--line)"
-              strokeWidth="1.5"
-            />
-            <polyline
-              fill="none"
-              stroke="var(--coral)"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              points="6,86 50,78 94,82 138,64 182,58 226,44 272,30"
-            />
-            <circle
-              cx="272"
-              cy="30"
-              r="6"
-              fill="var(--surface)"
-              stroke="var(--coral)"
-              strokeWidth="3"
-            />
-            <text
-              x="262"
-              y="18"
-              textAnchor="end"
-              fontSize="14"
-              fill="var(--text)"
-              fontWeight="700"
+        <div className="mt-2.5 grid gap-2 rounded-[18px] bg-[var(--surface-2)] p-4">
+          {sessionHistory.map((item, idx) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-2 text-xs"
             >
-              {session.clarityScore}
-            </text>
-            <text x="6" y="74" fontSize="12" fill="var(--text-2)">
-              62
-            </text>
-          </svg>
+              <span className="truncate font-medium text-[var(--text)]">
+                #{idx + 1} · {item.scenarioTitle ?? item.mode}
+              </span>
+              <Badge
+                variant={
+                  item.clarityScore >= 85
+                    ? "ok"
+                    : item.clarityScore >= 75
+                    ? "almost"
+                    : "work"
+                }
+              >
+                {item.clarityScore}
+              </Badge>
+            </div>
+          ))}
         </div>
         <div className="mt-2.5">
           <Badge variant="ok">
             <Check className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>+22 poin sejak sesi pertama</span>
+            <span>
+              {sessionHistory.length > 1
+                ? `${deltaScore >= 0 ? "+" : ""}${deltaScore} poin dibanding sesi pertama`
+                : "Sesi pertama berhasil tercatat di database"}
+            </span>
           </Badge>
         </div>
       </section>
 
       <Card className="p-4">
-        <h2 className="font-display text-base font-bold">Perkiraan level</h2>
+        <h2 className="font-display text-base font-bold">Progres Level CEFR</h2>
         <p className="mt-2">
           <span className="font-display text-3xl font-extrabold">
-            {user.cefrProgressLabel.split(" ")[0]}
+            {user.cefrLevel}
           </span>{" "}
           <span className="text-sm text-[var(--text-2)]">
-            {user.cefrProgressLabel.split(" ").slice(1).join(" ")}
+            ({user.cefrProgressPct}%)
           </span>
         </p>
         <Progress
@@ -146,36 +170,43 @@ export function SessionResultWorkspace({
           className="mt-2.5"
         />
         <p className="mt-2.5 text-xs text-[var(--text-2)]">
-          Dihitung dari kejelasan dan kelancaran, bukan dari aksenmu.
+          Dihitung dari kejelasan dan kelancaran di seluruh sesimu, bukan dari
+          aksen.
         </p>
       </Card>
 
       <section aria-labelledby="badges-heading">
         <h2 id="badges-heading" className="font-display text-lg font-bold">
-          Pencapaian penguasaan
+          Statistik Akun Saat Ini
         </h2>
         <div className="mt-2.5 grid grid-cols-3 gap-2.5">
-          <div className="grid justify-items-center gap-1.5 rounded-[16px] bg-[var(--tile-coral)] p-3 text-center text-xs font-bold text-[var(--tile-coral-fg)]">
-            <MessageSquare className="h-6 w-6" aria-hidden="true" />
-            <span>Misi Kafe</span>
+          <div className="grid justify-items-center gap-1 rounded-[16px] bg-[var(--tile-coral)] p-3 text-center text-xs font-bold text-[var(--tile-coral-fg)]">
+            <Flame className="h-5 w-5" aria-hidden="true" />
+            <span>{user.streakDays} Hari</span>
           </div>
-          <div className="grid justify-items-center gap-1.5 rounded-[16px] bg-[var(--tile-ochre)] p-3 text-center text-xs font-bold text-[var(--tile-ochre-fg)]">
-            <Flame className="h-6 w-6" aria-hidden="true" />
-            <span>{user.streakDays + 1} Hari</span>
+          <div className="grid justify-items-center gap-1 rounded-[16px] bg-[var(--tile-teal)] p-3 text-center text-xs font-bold text-[var(--tile-teal-fg)]">
+            <Clock className="h-5 w-5" aria-hidden="true" />
+            <span>{user.spokenTodayMinutes} Mnt</span>
           </div>
-          <div className="grid justify-items-center gap-1.5 rounded-[16px] bg-[var(--tile-teal)] p-3 text-center text-xs font-bold text-[var(--tile-teal-fg)]">
-            <Mic className="h-6 w-6" aria-hidden="true" />
-            <span>10 Obrolan</span>
+          <div className="grid justify-items-center gap-1 rounded-[16px] bg-[var(--tile-green)] p-3 text-center text-xs font-bold text-[var(--tile-green-fg)]">
+            <MessageSquare className="h-5 w-5" aria-hidden="true" />
+            <span>{sessionHistory.length} Sesi</span>
           </div>
         </div>
       </section>
 
       <div className="grid gap-2.5">
         <Button asChild>
-          <Link href="/roleplay">Ulangi roleplay kafe</Link>
+          <Link href="/">Lihat Progres Baru di Beranda</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/">Kembali ke Beranda</Link>
+          <Link
+            href={
+              session.mode === "drill" ? "/latihan-ucapan" : "/roleplay"
+            }
+          >
+            Latihan lagi
+          </Link>
         </Button>
       </div>
     </>
@@ -184,7 +215,8 @@ export function SessionResultWorkspace({
   return (
     <AppShell
       rightPanel={rightPanel}
-      rightPanelLabel="Tren kejelasan dan pencapaian"
+      rightPanelLabel="Riwayat kejelasan dan statistik akun"
+      prototypeNote={`Hasil Sesi ID: ${session.id} · Milik ${user.name} (${user.email}) dari PostgreSQL Laragon.`}
     >
       {/* Hero Clarity Ring Banner */}
       <section
@@ -198,41 +230,44 @@ export function SessionResultWorkspace({
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-[10px] border border-[rgba(124,199,160,0.45)] bg-[rgba(124,199,160,0.16)] px-3 py-1 text-xs font-bold text-[#7CC7A0]">
               <Check className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden="true" />
-              <span>3 misi selesai</span>
+              <span>{session.scenarioTitle ?? "Sesi Latihan"} selesai</span>
             </span>
           </div>
           <h1
             id="result-hero-title"
             className="font-display text-3xl font-extrabold text-[var(--hero-fg)]"
           >
-            Obrolan yang mantap, {user.name.split(" ")[0]}!
+            Kerja bagus, {user.name.split(" ")[0]}!
           </h1>
           <p className="text-sm text-[var(--hero-fg-2)]">
-            Sam memahami 9 dari 10 kalimatmu. Kamu bicara{" "}
-            {Math.floor(session.durationSec / 60)} menit{" "}
-            {session.durationSec % 60} detik di kafe.
+            {clearUtteranceCount} dari {session.utterances.length} kalimatmu
+            terdengar jelas. Durasi latihan {durationMinutes} menit{" "}
+            {durationSeconds} detik.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2 md:grid">
           <span className="inline-flex items-center gap-2 rounded-pill bg-[rgba(247,245,238,0.14)] px-3.5 py-2 text-xs font-bold">
             <Flame className="h-4 w-4 text-[var(--coral)]" aria-hidden="true" />
-            <span>{user.streakDays + 1} hari beruntun</span>
+            <span>{user.streakDays} hari beruntun</span>
           </span>
           <span className="inline-flex items-center gap-2 rounded-pill bg-[rgba(247,245,238,0.14)] px-3.5 py-2 text-xs font-bold">
             <Clock className="h-4 w-4" aria-hidden="true" />
-            <span>+5 menit hari ini</span>
+            <span>
+              Total hari ini: {user.spokenTodayMinutes} /{" "}
+              {user.dailyTargetMinutes} mnt
+            </span>
           </span>
         </div>
       </section>
 
-      {/* 4 ELSA-inspired Post-Roleplay Scores */}
+      {/* 4 Scores from Database */}
       <section aria-label="Skor per bagian">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <ScoreMetricCard
             label="Pengucapan"
             score={session.pronunciationScore}
-            description="2 bunyi perlu latihan"
+            description={`${mistakes.length} kata di Bank Kesalahan`}
             tone="teal"
             icon={<Mic className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-teal)] text-[var(--tile-teal-fg)]"
@@ -240,7 +275,7 @@ export function SessionResultWorkspace({
           <ScoreMetricCard
             label="Kelancaran"
             score={session.fluencyScore}
-            description={`${session.wpm} kata per menit, jeda pendek`}
+            description={`${session.wpm} kata per menit`}
             tone="ok"
             icon={<Gauge className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-green)] text-[var(--tile-green-fg)]"
@@ -248,7 +283,7 @@ export function SessionResultWorkspace({
           <ScoreMetricCard
             label="Tata bahasa"
             score={session.grammarScore}
-            description="Pemakaian a / an"
+            description="Struktur kalimat latihan"
             tone="almost"
             icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-ochre)] text-[var(--tile-ochre-fg)]"
@@ -256,7 +291,7 @@ export function SessionResultWorkspace({
           <ScoreMetricCard
             label="Kosakata"
             score={session.vocabularyScore}
-            description="3 frasa baru dipakai"
+            description={`Sesuai level ${user.cefrLevel}`}
             tone="coral"
             icon={<MessageSquare className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-coral)] text-[var(--tile-coral-fg)]"
@@ -267,8 +302,8 @@ export function SessionResultWorkspace({
       {/* Review Utterances */}
       <Card>
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="font-display text-xl font-bold">Ulas jawabanmu</h2>
-          <Badge variant="teal">{session.utterances.length} giliran</Badge>
+          <h2 className="font-display text-xl font-bold">Ulas kalimatmu</h2>
+          <Badge variant="teal">{session.utterances.length} kalimat</Badge>
         </div>
 
         <div className="grid gap-3">
@@ -304,22 +339,20 @@ export function SessionResultWorkspace({
                   </span>
                   <div>
                     <p className="text-xs text-[var(--text-2)]">Kamu bilang</p>
-                    <p lang="en" className="font-bold text-base">
+                    <p lang="en" className="text-base font-bold">
                       {u.transcript}
                     </p>
-                    {u.betterVersion ? (
+                    {u.betterVersion && u.betterVersion !== u.transcript ? (
                       <>
                         <p className="mt-2 text-xs text-[var(--text-2)]">
-                          Lebih natural
+                          Versi acuan
                         </p>
-                        <p
-                          lang="en"
-                          className="font-bold text-base mk mk-ok"
-                        >
+                        <p lang="en" className="mk mk-ok text-base font-bold">
                           {u.betterVersion}
                         </p>
                       </>
-                    ) : (
+                    ) : null}
+                    {u.note && (
                       <p className="mt-1 text-xs text-[var(--text-2)]">
                         {u.note}
                       </p>
@@ -327,13 +360,11 @@ export function SessionResultWorkspace({
                   </div>
                 </div>
 
-                {u.betterVersion && (
-                  <AudioTtsButton
-                    text={u.betterVersion}
-                    label="Contoh"
-                    variant="surface"
-                  />
-                )}
+                <AudioTtsButton
+                  text={u.betterVersion ?? u.referenceText}
+                  label="Dengar contoh"
+                  variant="surface"
+                />
               </div>
             );
           })}
@@ -349,39 +380,47 @@ export function SessionResultWorkspace({
             </span>
             <div>
               <h2 className="font-display text-lg font-bold">
-                {mistakes.slice(0, 3).length} kata masuk Bank Kesalahan
+                {mistakes.length} kata di Bank Kesalahan
               </h2>
               <p className="text-xs text-[var(--text-2)]">
-                Otomatis dijadwalkan untuk latihan singkat
+                Tersimpan di akunmu untuk dilatih kembali
               </p>
             </div>
           </div>
 
-          <div className="my-4 flex flex-wrap gap-2">
-            {mistakes.slice(0, 3).map((m) => (
-              <Badge
-                key={m.id}
-                variant={m.status}
-                lang="en"
-                className="text-sm"
-              >
-                {m.word} ({m.errorPattern})
-              </Badge>
-            ))}
-          </div>
+          {mistakes.length > 0 ? (
+            <>
+              <div className="my-4 flex flex-wrap gap-2">
+                {mistakes.slice(0, 4).map((m) => (
+                  <Badge
+                    key={m.id}
+                    variant={m.status}
+                    lang="en"
+                    className="text-sm"
+                  >
+                    {m.word} ({m.errorPattern})
+                  </Badge>
+                ))}
+              </div>
 
-          <Button asChild variant="accent" className="w-full">
-            <Link href="/latihan-ucapan">
-              <Mic className="h-5 w-5" aria-hidden="true" />
-              <span>Latih sekarang, ±2 menit</span>
-            </Link>
-          </Button>
+              <Button asChild variant="accent" className="w-full">
+                <Link href="/latihan-ucapan?source=bank">
+                  <Mic className="h-5 w-5" aria-hidden="true" />
+                  <span>Latih kata dari Bank Kesalahan</span>
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-[var(--text-2)]">
+              Tidak ada kesalahan baru pada sesi ini.
+            </p>
+          )}
         </Card>
 
         <Card>
           <fieldset>
             <legend className="mb-3 font-display text-lg font-bold">
-              Seberapa percaya diri kamu hari ini?
+              Seberapa percaya diri kamu setelah sesi ini?
             </legend>
             <div className="grid grid-cols-5 gap-2">
               {[

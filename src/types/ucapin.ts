@@ -18,8 +18,20 @@ export interface PhonemeBreakdownItem {
   status: PhonemeStatus;
 }
 
+export interface PhonemeGuideDTO {
+  id: string;
+  phoneme: string;
+  errorPattern: string;
+  title: string;
+  description: string;
+  articulationSteps: string[];
+  minimalPairs: string[];
+}
+
 export interface DrillSentenceDTO {
   id: string;
+  goalTag: string;
+  cefrLevel: string;
   category: string;
   focusPhonemes: string;
   text: string;
@@ -95,6 +107,7 @@ export interface ScenarioNodeDTO {
 export interface ScenarioDTO {
   id: string;
   slug: string;
+  goalTag: string;
   title: string;
   category: string;
   cefrLevel: string;
@@ -134,8 +147,10 @@ export interface SpeakingSessionDTO {
 
 export interface UserProfileDTO {
   id: string;
+  email: string;
   name: string;
   initials: string;
+  roleLabel: string;
   cefrLevel: string;
   cefrProgressLabel: string;
   cefrProgressPct: number;
@@ -148,4 +163,7 @@ export interface UserProfileDTO {
   streakFreezes: number;
   correctionPref: string;
   saveAudioOptIn: boolean;
+  onboardingCompleted: boolean;
+  micChecked: boolean;
+  activeScenarioSlug: string;
 }

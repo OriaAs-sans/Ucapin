@@ -20,6 +20,16 @@ export async function PATCH(request: Request) {
         typeof body.saveAudioOptIn === "boolean"
           ? body.saveAudioOptIn
           : undefined,
+      onboardingCompleted:
+        typeof body.onboardingCompleted === "boolean"
+          ? body.onboardingCompleted
+          : undefined,
+      micChecked:
+        typeof body.micChecked === "boolean" ? body.micChecked : undefined,
+      activeScenarioSlug:
+        typeof body.activeScenarioSlug === "string"
+          ? body.activeScenarioSlug
+          : undefined,
     });
 
     return NextResponse.json({ ok: true, user: updated });
