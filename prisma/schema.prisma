@@ -154,6 +154,10 @@ model MistakeItem {
   status          String   @default("work")
   scheduleLabel   String   @default("hari ini")
   nextReviewAt    DateTime @default(now())
+  // Tahap pengulangan berjarak: 0 = baru salah (ulang hari ini), 1..4 = jarak 1, 3, 7, 14 hari.
+  reviewStage     Int      @default(0)
+  lastPracticedAt DateTime?
+  masteredAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

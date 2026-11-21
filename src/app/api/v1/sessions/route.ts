@@ -5,36 +5,38 @@ import type { PhonemeStatus } from "@/types/ucapin";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const score = (v: unknown) =>
+      typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : 0;
+    if (!Array.isArray(body.utterances) || body.utterances.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Belum ada ucapan yang dinilai di sesi ini." },
+        { status: 400 }
+      );
+    }
     const session = await completeSpeakingSession({
       mode: body.mode === "drill" ? "drill" : "roleplay",
       scenarioTitle: body.scenarioTitle ?? "Latihan Ucapan",
-      durationSec: typeof body.durationSec === "number" ? body.durationSec : 180,
+      durationSec:
+        typeof body.durationSec === "number" ? Math.max(0, Math.round(body.durationSec)) : 0,
+      // Batas atas mencegah satu sesi menggelembungkan liga menit bicara.
       addedMinutes:
-        typeof body.addedMinutes === "number" ? body.addedMinutes : 3,
-      clarityScore:
-        typeof body.clarityScore === "number" ? body.clarityScore : 83,
-      pronunciationScore:
-        typeof body.pronunciationScore === "number"
-          ? body.pronunciationScore
-          : 79,
-      fluencyScore:
-        typeof body.fluencyScore === "number" ? body.fluencyScore : 86,
-      grammarScore:
-        typeof body.grammarScore === "number" ? body.grammarScore : 84,
-      vocabularyScore:
-        typeof body.vocabularyScore === "number" ? body.vocabularyScore : 88,
-      utterances: Array.isArray(body.utterances)
-        ? body.utterances
-        : [
-            {
-              referenceText: "I have a very good feeling about this weather.",
-              transcript: "I have a fery good feeling about dis weather.",
-              betterVersion: "I have a very good feeling about this weather.",
-              status: "almost" as PhonemeStatus,
-              note: "Fokus getaran /v/ pada very dan /ð/ pada this",
-              clarityScore: 83,
-            },
-          ],
+        typeof body.addedMinutes === "number"
+          ? Math.max(0, Math.min(30, Math.round(body.addedMinutes)))
+          : 0,
+      clarityScore: score(body.clarityScore),
+      pronunciationScore: score(body.pronunciationScore),
+      fluencyScore: score(body.fluencyScore),
+      // Tata bahasa dan kosakata belum dinilai oleh sistem mana pun: simpan 0, jangan dikarang.
+      grammarScore: 0,
+      vocabularyScore: 0,
+      utterances: body.utterances as {
+        referenceText: string;
+        transcript: string;
+        betterVersion: string | null;
+        status: PhonemeStatus;
+        note: string;
+        clarityScore: number;
+      }[],
       mistakes: Array.isArray(body.mistakes) ? body.mistakes : [],
     });
 

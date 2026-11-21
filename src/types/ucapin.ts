@@ -59,6 +59,10 @@ export interface MistakeItemDTO {
   occurrenceCount: number;
   status: PhonemeStatus;
   scheduleLabel: string;
+  /** 0 = baru salah; 1..4 = sudah berhasil diulang sebanyak itu (jarak 1, 3, 7, 14 hari). */
+  reviewStage: number;
+  isDue: boolean;
+  isMastered: boolean;
 }
 
 export interface DailyActivityDTO {

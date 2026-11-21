@@ -76,7 +76,9 @@ export function DashboardWorkspace({
     ...weeklyActivities.map((a) => a.minutesSpoken),
     10
   );
-  const topMistake = mistakes[0] ?? null;
+  const activeMistakes = mistakes.filter((m) => !m.isMastered);
+  const dueCount = mistakes.filter((m) => m.isDue).length;
+  const topMistake = activeMistakes[0] ?? null;
 
   const rightPanel = (
     <>
@@ -131,7 +133,7 @@ export function DashboardWorkspace({
           aria-label={`Total bicara minggu ini ${weeklyTotalMinutes} menit`}
           className="grid h-[120px] grid-cols-7 items-end gap-2"
         >
-          {weeklyActivities.map((day) => {
+          {weeklyActivities.map((day, dayIdx) => {
             const pct =
               day.minutesSpoken === 0
                 ? 4
@@ -150,10 +152,10 @@ export function DashboardWorkspace({
                 )}
               >
                 <b
-                  style={{ height: `${pct}%` }}
+                  style={{ height: `${pct}%`, "--i": dayIdx } as React.CSSProperties}
                   title={`${day.dayLabel}: ${day.minutesSpoken} menit`}
                   className={cn(
-                    "block w-full max-w-[24px] rounded-[8px] transition-all",
+                    "grow-y block w-full max-w-[24px] rounded-[8px]",
                     day.isToday && day.minutesSpoken > 0
                       ? "bg-[var(--coral)]"
                       : "bg-[var(--line)]"
@@ -204,8 +206,8 @@ export function DashboardWorkspace({
           ))}
         </div>
         <p className="mt-2 text-xs text-[var(--text-2)]">
-          Dihitung langsung dari total menit bicara pengguna di PostgreSQL
-          Laragon, bukan skor pengucapan.
+          Diurutkan dari total menit bicara, bukan skor pengucapan. Yang
+          dihitung usahamu, bukan aksenmu.
         </p>
       </section>
     </>
@@ -215,7 +217,6 @@ export function DashboardWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Profil dan progres"
-      prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Seluruh angka dimuat real-time dari PostgreSQL Laragon.`}
     >
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -235,9 +236,6 @@ export function DashboardWorkspace({
               ? user.goals.join(", ").toUpperCase()
               : "UMUM"}
           </Badge>
-          <Button asChild variant="surface" size="sm">
-            <Link href="/masuk">Ganti Akun ({user.email})</Link>
-          </Button>
         </div>
       </header>
 
@@ -364,19 +362,27 @@ export function DashboardWorkspace({
             </span>
           </Card>
 
-          <Card className="flex flex-col gap-3">
+          <Card className="group relative flex flex-col gap-3 transition-all hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex items-start justify-between gap-2">
               <span className="grid h-12 w-12 place-items-center rounded-[14px] bg-[var(--tile-green)] text-[var(--tile-green-fg)]">
                 <Volume2 className="h-6 w-6" aria-hidden="true" />
               </span>
-              <Badge variant="ghost">Segera hadir</Badge>
+              <Badge variant="teal">Tempo & irama</Badge>
             </div>
-            <h3 className="font-display text-lg font-bold">Shadowing</h3>
+            <h3 className="font-display text-lg font-bold">
+              <Link
+                href="/shadowing"
+                className="text-[var(--text)] no-underline after:absolute after:inset-0 after:rounded-card"
+              >
+                Shadowing
+              </Link>
+            </h3>
             <p className="text-sm text-[var(--text-2)]">
-              Dengarkan penutur asli, tirukan iramanya.
+              Dengarkan contoh, tirukan, lalu bandingkan tempomu dengan aslinya.
             </p>
-            <span className="mt-auto text-xs text-[var(--text-2)]">
-              Tahap pengembangan berikutnya
+            <span className="mt-auto inline-flex items-center gap-1.5 text-xs text-[var(--text-2)]">
+              <Clock className="h-4 w-4" aria-hidden="true" />
+              <span>{drillSentenceCount} kalimat · ±3 menit</span>
             </span>
           </Card>
 
@@ -408,7 +414,7 @@ export function DashboardWorkspace({
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <h2 className="font-display text-xl font-bold">
-                  Bank Kesalahan ({mistakes.length})
+                  Bank Kesalahan
                 </h2>
                 {mistakes.length > 0 && (
                   <Link
@@ -421,15 +427,17 @@ export function DashboardWorkspace({
               </div>
               <p className="text-xs text-[var(--text-2)]">
                 {mistakes.length === 0
-                  ? "Belum ada kesalahan yang tercatat di akunmu"
-                  : "Kata yang perlu diulang dari sesi latihan dan roleplay-mu"}
+                  ? "Belum ada kata yang tercatat"
+                  : dueCount > 0
+                  ? `${dueCount} kata siap diulang hari ini`
+                  : "Semua kata sudah diulang sesuai jadwal"}
               </p>
             </div>
           </div>
 
-          {mistakes.length > 0 ? (
+          {activeMistakes.length > 0 ? (
             <div className="grid gap-2">
-              {mistakes.slice(0, 3).map((m) => (
+              {activeMistakes.slice(0, 3).map((m) => (
                 <PhoneticWordRow
                   key={m.id}
                   word={m.word}
@@ -439,12 +447,17 @@ export function DashboardWorkspace({
                   status={m.status}
                 />
               ))}
-              <Button asChild className="mt-2 w-full">
-                <Link href="/latihan-ucapan?source=bank">
-                  Latih {Math.min(3, mistakes.length)} kata ini dari Bank
-                  Kesalahan
-                </Link>
-              </Button>
+              {dueCount > 0 ? (
+                <Button asChild className="mt-2 w-full">
+                  <Link href="/latihan-ucapan?source=bank">
+                    Ulangi {dueCount} kata hari ini
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild variant="surface" className="mt-2 w-full">
+                  <Link href="/bank-kesalahan">Lihat jadwal ulang</Link>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-card border-[1.5px] border-[var(--line)] bg-[var(--bg)] p-4">
@@ -452,7 +465,7 @@ export function DashboardWorkspace({
                 Bank Kesalahan masih kosong
               </h3>
               <p className="mt-1 text-sm text-[var(--text-2)]">
-                Kamu belum memiliki catatan kesalahan bicara di database. Mulai
+                Belum ada kata yang perlu diulang. Mulai
                 Latihan Ucapan atau Roleplay, dan setiap bunyi yang meleset akan
                 masuk ke sini secara otomatis.
               </p>

@@ -9,6 +9,13 @@ import {
 } from "@/server/password";
 import { readSessionToken, SESSION_COOKIE_NAME } from "@/server/session";
 import { TEST_ACCOUNT_IDS } from "@/server/test-accounts";
+import {
+  advanceAfterSuccess,
+  isDue,
+  resetAfterMistake,
+  scheduleLabelFor,
+} from "@/lib/spaced-repetition";
+import { getArticulationGuideForWord } from "@/lib/speech-assessor";
 import type {
   DailyActivityDTO,
   DrillSentenceDTO,
@@ -83,6 +90,47 @@ function mapUser(u: {
     micChecked: u.micChecked ?? false,
     activeScenarioSlug: u.activeScenarioSlug || "wawancara-startup",
   };
+}
+
+type MistakeRow = {
+  id: string;
+  word: string;
+  ipa: string;
+  phoneme: string;
+  errorPattern: string;
+  heardAs: string;
+  sourceMode: string;
+  occurrenceCount: number;
+  status: string;
+  nextReviewAt: Date;
+  reviewStage: number;
+  masteredAt: Date | null;
+};
+
+function mapMistake(m: MistakeRow, now = new Date()): MistakeItemDTO {
+  return {
+    id: m.id,
+    word: m.word,
+    ipa: m.ipa,
+    phoneme: m.phoneme,
+    errorPattern: m.errorPattern,
+    heardAs: m.heardAs,
+    sourceMode: m.sourceMode,
+    occurrenceCount: m.occurrenceCount,
+    status: m.status as PhonemeStatus,
+    scheduleLabel: scheduleLabelFor(m, now),
+    reviewStage: m.reviewStage,
+    isDue: isDue(m, now),
+    isMastered: Boolean(m.masteredAt),
+  };
+}
+
+// Urutan Bank Kesalahan: yang jatuh tempo dulu, lalu yang paling sering muncul; yang dikuasai paling akhir.
+function sortMistakes(items: MistakeItemDTO[]): MistakeItemDTO[] {
+  const rank = (m: MistakeItemDTO) => (m.isMastered ? 2 : m.isDue ? 0 : 1);
+  return [...items].sort(
+    (a, b) => rank(a) - rank(b) || b.occurrenceCount - a.occurrenceCount
+  );
 }
 
 // Mengembalikan id pengguna dari cookie sesi yang tanda tangannya valid, atau null.
@@ -273,18 +321,7 @@ export async function getDashboardData() {
       )
     : false;
 
-  const mistakeDTOs: MistakeItemDTO[] = mistakes.map((m) => ({
-    id: m.id,
-    word: m.word,
-    ipa: m.ipa,
-    phoneme: m.phoneme,
-    errorPattern: m.errorPattern,
-    heardAs: m.heardAs,
-    sourceMode: m.sourceMode,
-    occurrenceCount: m.occurrenceCount,
-    status: m.status as PhonemeStatus,
-    scheduleLabel: m.scheduleLabel,
-  }));
+  const mistakeDTOs: MistakeItemDTO[] = sortMistakes(mistakes.map((m) => mapMistake(m)));
 
   const activityDTOs: DailyActivityDTO[] = activities.map((a) => ({
     id: a.id,
@@ -364,19 +401,46 @@ export async function getDrillSentences(options?: {
   }));
 
   if (options?.source === "bank") {
-    const userMistakes = await prisma.mistakeItem.findMany({
-      where: { userId: user.id },
+    const now = new Date();
+    const dueMistakes = await prisma.mistakeItem.findMany({
+      where: { userId: user.id, masteredAt: null, nextReviewAt: { lte: now } },
+      orderBy: [{ occurrenceCount: "desc" }, { nextReviewAt: "asc" }],
+      take: 12,
     });
-    const mistakeWords = new Set(userMistakes.map((m) => m.word.toLowerCase()));
-    const matched = allMapped.filter(
-      (s) =>
-        mistakeWords.has(s.coachWord.toLowerCase()) ||
-        Object.keys(s.targetMarks).some((k) =>
-          mistakeWords.has(k.toLowerCase())
-        )
-    );
-    if (matched.length > 0) {
-      return { user, sentences: matched, activeGoal: "bank" };
+    const dueWords = new Set(dueMistakes.map((m) => m.word.toLowerCase()));
+    const sentenceWords = (s: DrillSentenceDTO) =>
+      s.text.toLowerCase().split(/\s+/).map((t) => t.replace(/[^a-z']/g, ""));
+    const matched = allMapped.filter((s) => sentenceWords(s).some((w) => dueWords.has(w)));
+    const covered = new Set(matched.flatMap(sentenceWords));
+
+    // Kata dari roleplay yang tidak ada di kalimat drill mana pun tetap bisa dilatih sebagai satu kata.
+    const wordCards: DrillSentenceDTO[] = dueMistakes
+      .filter((m) => !covered.has(m.word.toLowerCase()))
+      .map((m, i) => {
+        const guide = getArticulationGuideForWord(m.word, m.errorPattern);
+        return {
+          id: `bank-word-${m.id}`,
+          goalTag: "bank",
+          cefrLevel: user.cefrLevel,
+          category: "Bank Kesalahan",
+          focusPhonemes: m.errorPattern,
+          text: m.word,
+          ipa: m.ipa,
+          translation: `Dari ${m.sourceMode}`,
+          orderIndex: 1000 + i,
+          targetMarks: { [m.word]: { status: "work", note: m.errorPattern, ipa: m.ipa } },
+          sampleScores: [],
+          coachWord: m.word,
+          coachIpa: m.ipa,
+          coachNote: guide.title,
+          coachSteps: guide.steps,
+          phonemeBreakdown: [],
+          minimalPairs: guide.minimalPairs,
+        };
+      });
+
+    if (matched.length > 0 || wordCards.length > 0) {
+      return { user, sentences: [...matched, ...wordCards], activeGoal: "bank" };
     }
   }
 
@@ -389,9 +453,19 @@ export async function getDrillSentences(options?: {
       : s.goalTag === targetGoal
   );
 
+  // Kalimat di level pelajar tampil lebih dulu, lalu level terdekat.
+  const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const userLevelIdx = Math.max(0, LEVELS.indexOf(user.cefrLevel));
+  const levelDistance = (s: DrillSentenceDTO) =>
+    Math.abs(Math.max(0, LEVELS.indexOf(s.cefrLevel)) - userLevelIdx);
+  const pool = filtered.length > 0 ? filtered : allMapped;
+  const ordered = [...pool].sort(
+    (a, b) => levelDistance(a) - levelDistance(b) || a.orderIndex - b.orderIndex
+  );
+
   return {
     user,
-    sentences: filtered.length > 0 ? filtered : allMapped,
+    sentences: ordered,
     activeGoal: targetGoal,
   };
 }
@@ -532,19 +606,43 @@ export async function getLatestSessionResult(sessionId?: string): Promise<{
       mode: s.mode,
       scenarioTitle: s.scenarioTitle,
     })),
-    mistakes: mistakes.map((m) => ({
-      id: m.id,
-      word: m.word,
-      ipa: m.ipa,
-      phoneme: m.phoneme,
-      errorPattern: m.errorPattern,
-      heardAs: m.heardAs,
-      sourceMode: m.sourceMode,
-      occurrenceCount: m.occurrenceCount,
-      status: m.status as PhonemeStatus,
-      scheduleLabel: m.scheduleLabel,
-    })),
+    mistakes: mistakes.map((m) => mapMistake(m)),
   };
+}
+
+/**
+ * Mencatat hasil latihan kata yang sudah ada di Bank Kesalahan.
+ * Kata yang terdengar jelas naik tahap (jadwal makin jauh); kata lain diabaikan di sini
+ * karena kesalahannya sudah dicatat lewat recordMistakeInBank.
+ */
+export async function recordBankPractice(results: { word: string; status: PhonemeStatus }[]) {
+  const user = await getActiveUser();
+  const okWords = [
+    ...new Set(results.filter((r) => r.status === "ok").map((r) => r.word.toLowerCase())),
+  ];
+  if (okWords.length === 0) return { advanced: [] as string[] };
+
+  const now = new Date();
+  const items = await prisma.mistakeItem.findMany({
+    where: { userId: user.id, word: { in: okWords }, masteredAt: null },
+  });
+  const advanced: string[] = [];
+  for (const item of items) {
+    // Hanya kata yang memang sedang jatuh tempo yang naik tahap: mengucapkan kata yang sama
+    // berkali-kali dalam satu hari tidak mempercepat jadwal.
+    if (!isDue(item, now)) continue;
+    const next = advanceAfterSuccess(item, now);
+    await prisma.mistakeItem.update({
+      where: { id: item.id },
+      data: {
+        ...next,
+        lastPracticedAt: now,
+        status: next.masteredAt ? "ok" : item.status,
+      },
+    });
+    advanced.push(item.word);
+  }
+  return { advanced };
 }
 
 export async function recordMistakeInBank(input: {
@@ -569,7 +667,7 @@ export async function recordMistakeInBank(input: {
       status: input.status,
       heardAs: input.heardAs,
       sourceMode: input.sourceMode,
-      scheduleLabel: "hari ini",
+      ...resetAfterMistake(),
     },
     create: {
       userId: user.id,
@@ -654,7 +752,7 @@ export async function completeSpeakingSession(input: {
           status: m.status,
           heardAs: m.heardAs,
           sourceMode: input.scenarioTitle,
-          scheduleLabel: "hari ini",
+          ...resetAfterMistake(),
         },
         create: {
           userId: user.id,
@@ -677,7 +775,6 @@ export async function completeSpeakingSession(input: {
     user.clarityAvg === 0
       ? input.clarityScore
       : Math.round((user.clarityAvg + input.clarityScore) / 2);
-  const newProgressPct = Math.min(100, user.cefrProgressPct + 15);
 
   await prisma.user.update({
     where: { id: user.id },
@@ -685,8 +782,6 @@ export async function completeSpeakingSession(input: {
       spokenTodayMinutes: { increment: input.addedMinutes },
       totalSpokenMinutes: { increment: input.addedMinutes },
       clarityAvg: newClarityAvg,
-      cefrProgressPct: newProgressPct,
-      cefrProgressLabel: `${user.cefrLevel} (${newProgressPct}% menuju level berikutnya)`,
       ...(isFirstSessionToday ? { streakDays: { increment: 1 } } : {}),
     },
   });

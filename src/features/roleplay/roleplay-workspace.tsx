@@ -38,6 +38,15 @@ interface ChatTurn {
     chips?: string[];
   };
   okTag?: string;
+  /** Penilaian nyata giliran pelajar (hanya untuk who === "me"). */
+  assessment?: {
+    referenceText: string;
+    scores: number[];
+    speechSec: number;
+    hasMistake: boolean;
+    hasWork: boolean;
+    flaggedWords: string[];
+  };
 }
 
 export interface RoleplayWorkspaceProps {
@@ -51,7 +60,6 @@ export interface RoleplayWorkspaceProps {
 }
 
 export function RoleplayWorkspace({
-  user,
   scenario,
   allScenarios,
   initialCorrectionPref = "giliran",
@@ -63,8 +71,9 @@ export function RoleplayWorkspace({
   const [correctionMode, setCorrectionMode] = React.useState(
     initialCorrectionPref
   );
-  const [completedMissions, setCompletedMissions] = React.useState(1);
-  const [elapsedSec, setElapsedSec] = React.useState(165);
+  const [completedMissions, setCompletedMissions] = React.useState(0);
+  const [elapsedSec, setElapsedSec] = React.useState(0);
+  const [turnNotice, setTurnNotice] = React.useState<string | null>(null);
   const [savingSession, setSavingSession] = React.useState(false);
   const [openTranslations, setOpenTranslations] = React.useState<
     Record<string, boolean>
@@ -118,27 +127,30 @@ export function RoleplayWorkspace({
   const handleCompleteAndViewResult = async () => {
     setSavingSession(true);
     try {
-      const myUtterances = turns
-        .filter((t) => t.who === "me")
-        .map((t) => ({
-          referenceText: t.text,
-          transcript: t.text,
-          betterVersion: t.correction ? `${t.text} (perjelas konsonan)` : null,
-          status: (t.correction ? "almost" : "ok") as "almost" | "ok",
-          note: t.correction?.title ?? "Sudah jelas dan natural",
-          clarityScore: t.correction ? 79 : 91,
-        }));
-
-      const mistakesFromNodes = scenario.nodes
-        .filter((n) => n.sampleCorrection)
-        .map((n) => ({
-          word: n.sampleCorrection!.word,
-          ipa: n.sampleCorrection!.ipa,
-          phoneme: n.sampleCorrection!.phoneme,
-          errorPattern: n.sampleCorrection!.errorPattern,
-          heardAs: n.sampleCorrection!.detailText,
-          status: n.sampleCorrection!.status,
-        }));
+      const assessedTurns = turns.filter((t) => t.who === "me" && t.assessment);
+      if (assessedTurns.length === 0) {
+        setSavingSession(false);
+        return;
+      }
+      const avg = (idx: number) =>
+        Math.round(
+          assessedTurns.reduce((acc, t) => acc + (t.assessment!.scores[idx] ?? 0), 0) /
+            assessedTurns.length
+        );
+      const speechSec = assessedTurns.reduce((acc, t) => acc + t.assessment!.speechSec, 0);
+      const myUtterances = assessedTurns.map((t) => ({
+        referenceText: t.assessment!.referenceText,
+        transcript: t.text,
+        betterVersion: t.assessment!.hasMistake ? t.assessment!.referenceText : null,
+        status: (t.assessment!.hasWork ? "work" : t.assessment!.hasMistake ? "almost" : "ok") as
+          | "work"
+          | "almost"
+          | "ok",
+        note: t.assessment!.hasMistake
+          ? `Perhatikan kata: ${t.assessment!.flaggedWords.join(", ")}`
+          : "Semua kata terdengar jelas",
+        clarityScore: t.assessment!.scores[0] ?? 0,
+      }));
 
       const res = await fetch("/api/v1/sessions", {
         method: "POST",
@@ -147,27 +159,14 @@ export function RoleplayWorkspace({
           mode: "roleplay",
           scenarioTitle: scenario.title,
           durationSec: elapsedSec,
-          addedMinutes: 5,
-          clarityScore: 86,
-          pronunciationScore: 83,
-          fluencyScore: 88,
-          grammarScore: 82,
-          vocabularyScore: 91,
-          utterances:
-            myUtterances.length > 0
-              ? myUtterances
-              : [
-                  {
-                    referenceText:
-                      scenario.nodes[0]?.hints[0] ?? "Yes, please.",
-                    transcript: scenario.nodes[0]?.hints[0] ?? "Yes, please.",
-                    betterVersion: null,
-                    status: "ok",
-                    note: "Sudah jelas dan sopan",
-                    clarityScore: 88,
-                  },
-                ],
-          mistakes: mistakesFromNodes,
+          // Menit bicara dihitung dari lama rekaman, bukan lama halaman terbuka.
+          addedMinutes: Math.max(1, Math.round(speechSec / 60)),
+          clarityScore: avg(0),
+          pronunciationScore: avg(1),
+          fluencyScore: avg(2),
+          utterances: myUtterances,
+          // Kesalahan sudah dicatat per giliran saat dinilai; tidak ada kesalahan contoh dari skrip.
+          mistakes: [],
         }),
       });
       const data = await res.json();
@@ -185,19 +184,50 @@ export function RoleplayWorkspace({
   const submitTurn = React.useCallback(
     async (rec?: RecordedSpeechResult) => {
       if (!currentNode) return;
-      const targetReference =
-        selectedHint ?? currentNode.hints[0] ?? "Yes, please.";
-      const spokenText = rec?.transcript?.trim() || targetReference;
-      setSelectedHint(null);
+      if (!rec || rec.words.length === 0) return;
+      const spokenText = rec.transcript.trim();
+
+      // Pelajar boleh menjawab dengan petunjuk mana pun: nilai terhadap petunjuk yang paling mirip.
+      const candidates = selectedHint
+        ? [selectedHint]
+        : currentNode.hints.length > 0
+        ? currentNode.hints
+        : [spokenText];
+      const assessments = candidates.map((hint) => ({
+        hint,
+        result: assessSpokenUtterance({
+          referenceText: hint,
+          spokenWords: rec.words,
+          defaultTargetMarks: {},
+        }),
+      }));
+      const best = assessments.reduce((a, b) =>
+        (b.result.scores[0]?.score ?? 0) > (a.result.scores[0]?.score ?? 0) ? b : a
+      );
+      const targetReference = best.hint;
+      const evaluated = best.result;
       setMicState("idle");
 
-      const evaluated = assessSpokenUtterance({
-        referenceText: targetReference,
-        spokenTranscript: spokenText,
-        defaultTargetMarks: {},
-        durationMs: rec?.durationMs ?? 2500,
-        confidence: rec?.confidence ?? 0.85,
-      });
+      // Jawaban yang tidak nyambung: minta coba lagi dulu (prompt), jangan langsung dikoreksi.
+      if ((evaluated.scores[0]?.score ?? 0) < 30) {
+        setTurnNotice(
+          `Kami menangkap "${spokenText}", tapi belum nyambung dengan pertanyaannya. Coba jawab lagi, atau pilih salah satu petunjuk di bawah.`
+        );
+        return;
+      }
+      setTurnNotice(null);
+      setSelectedHint(null);
+
+      fetch("/api/v1/mistakes/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          results: Object.values(evaluated.wordDetails).map((d) => ({
+            word: d.word,
+            status: d.status,
+          })),
+        }),
+      }).catch(() => {});
 
       const firstMistake = evaluated.flaggedMistakes[0];
       const shouldShowInline =
@@ -216,6 +246,14 @@ export function RoleplayWorkspace({
               }
             : undefined,
         okTag: !firstMistake ? "Ucapan jelas dan natural" : undefined,
+        assessment: {
+          referenceText: targetReference,
+          scores: evaluated.scores.map((sc) => sc.score),
+          speechSec: rec.durationMs / 1000,
+          hasMistake: evaluated.flaggedMistakes.length > 0,
+          hasWork: evaluated.flaggedMistakes.some((m) => m.status === "work"),
+          flaggedWords: evaluated.flaggedMistakes.map((m) => m.word),
+        },
       };
 
       if (evaluated.flaggedMistakes.length > 0) {
@@ -410,7 +448,6 @@ export function RoleplayWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Misi dan bantuan roleplay"
-      prototypeNote={`Aktif sebagai ${user.name} · Skenario roleplay menyesuaikan tujuan belajar (${scenario.category}).`}
     >
       {/* Topbar */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -514,7 +551,7 @@ export function RoleplayWorkspace({
               <div
                 key={turn.id}
                 className={cn(
-                  "max-w-[34rem]",
+                  "enter-rise max-w-[34rem]",
                   isMe ? "self-end text-right" : "self-start text-left"
                 )}
               >
@@ -648,8 +685,8 @@ export function RoleplayWorkspace({
               <span>Semua misi beres!</span>
             </h3>
             <p className="mt-1 text-sm text-[var(--text)]">
-              Simpan hasil sesi ini ke database Laragon untuk menambah +5 menit
-              bicaramu hari ini dan melihat kata yang masuk Bank Kesalahan.
+              Simpan hasil sesi ini untuk menambah menit bicaramu hari ini dan
+              melihat kata yang masuk Bank Kesalahan.
             </p>
             <div className="mt-3.5">
               <Button
@@ -670,6 +707,14 @@ export function RoleplayWorkspace({
       {/* Voice Composer */}
       {!isFinished && (
         <Card className="p-5">
+          {turnNotice && (
+            <p
+              role="status"
+              className="rounded-control border-[1.5px] border-[var(--almost)] bg-[var(--almost-wash)] px-4 py-3 text-sm text-[var(--text)]"
+            >
+              {turnNotice}
+            </p>
+          )}
           <MicRecorder
             compact
             state={micState}

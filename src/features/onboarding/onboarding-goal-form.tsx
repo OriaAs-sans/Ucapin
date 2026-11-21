@@ -253,8 +253,8 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
             Bicara dulu, sempurna belakangan.
           </h2>
           <p className="mt-2 text-sm text-[var(--side-text)]">
-            Setiap perubahan yang kamu simpan langsung diperbarui di tabel{" "}
-            <code>User</code> pada PostgreSQL Laragon.
+            Tujuan dan target bisa kamu ubah kapan saja dari menu Tujuan &amp;
+            Target.
           </p>
         </div>
       </aside>
@@ -302,8 +302,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
               : "Kamu ingin bisa bicara bahasa Inggris untuk apa?"}
           </h1>
           <p className="mt-2 text-sm text-[var(--text-2)]">
-            Pilihan yang sudah kamu simpan otomatis tercentang dari database.
-            Ubah kapan saja untuk mengganti fokus latihan dan skenario roleplay.
+            Pilihan yang sudah kamu simpan sudah tercentang. Ubah kapan saja untuk mengganti fokus latihan dan skenario roleplay.
           </p>
         </header>
 
@@ -315,7 +314,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
             <p className="flex items-center gap-2 text-sm font-bold text-[var(--ok)]">
               <Check className="h-5 w-5" aria-hidden="true" />
               <span>
-                Preferensi berhasil disimpan ke PostgreSQL Laragon!
+                Tujuan dan target tersimpan.
               </span>
             </p>
             <div className="flex flex-wrap gap-2">
@@ -466,9 +465,17 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
                 Buka Pengaturan Mikrofon & Privasi
               </Link>
             ) : (
-              <Link href="/masuk" className="text-sm font-semibold underline">
-                Ganti akun
-              </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  await fetch("/api/v1/auth/logout", { method: "POST" }).catch(() => {});
+                  router.push("/masuk");
+                  router.refresh();
+                }}
+                className="text-sm font-semibold underline"
+              >
+                Keluar dari akun ini
+              </button>
             )}
 
             <div className="flex flex-wrap items-center gap-3">
@@ -491,7 +498,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
               <Button type="submit" variant="accent" disabled={saving}>
                 <span>
                   {saving
-                    ? "Menyimpan ke Database..."
+                    ? "Menyimpan..."
                     : isReconfiguring
                     ? "Simpan Perubahan Preferensi"
                     : "Simpan & Lanjut ke Cek Mikrofon (Langkah 2/3)"}

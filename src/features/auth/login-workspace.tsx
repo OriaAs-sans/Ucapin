@@ -6,14 +6,13 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
+  ChevronDown,
   LogIn,
   RotateCcw,
-  Sparkles,
   UserCheck,
   UserPlus,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { PhoneticSpecimenCard } from "@/components/shared/phonetic-specimen-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,6 +23,16 @@ import { cn } from "@/lib/utils";
 
 // Sama dengan TEST_ACCOUNT_IDS.fresh di src/server/test-accounts.ts (modul server tidak diimpor ke klien).
 const TEST_ACCOUNT_FRESH_ID = "learner-baru";
+const MIN_PASSWORD_LENGTH = 8;
+
+// Materi produk: pola bunyi yang paling sering tertukar pada penutur Indonesia (PRODUCT.md § Positioning).
+const SOUND_PATTERNS = [
+  { word: "very", ipa: "/ˈvɛri/", pattern: "/v/ jadi /f/" },
+  { word: "think", ipa: "/θɪŋk/", pattern: "/θ/ jadi /t/" },
+  { word: "this", ipa: "/ðɪs/", pattern: "/ð/ jadi /d/" },
+  { word: "shop", ipa: "/ʃɒp/", pattern: "/ʃ/ jadi /s/" },
+  { word: "worked", ipa: "/wɜːkt/", pattern: "-ed akhir hilang" },
+];
 
 export interface LoginWorkspaceProps {
   testingUsers: UserProfileDTO[];
@@ -41,97 +50,75 @@ export function LoginWorkspace({
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
-  const [pdpConsent, setPdpConsent] = React.useState(true);
+  const [pdpConsent, setPdpConsent] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [resetMsg, setResetMsg] = React.useState<string | null>(null);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const switchMode = (next: "login" | "register") => {
+    setMode(next);
+    setErrorMsg(null);
+    setPassword("");
+  };
+
+  const postAuth = async (url: string, body: unknown, fallbackError: string) => {
     setErrorMsg(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/auth/login", {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setErrorMsg(data.error ?? "Gagal masuk ke akun.");
+        setErrorMsg(data.error ?? fallbackError);
         setLoading(false);
         return;
       }
       router.push(data.redirectTo ?? "/");
       router.refresh();
     } catch {
-      setErrorMsg("Terjadi kesalahan koneksi ke server.");
+      setErrorMsg("Tidak bisa terhubung ke server. Periksa koneksimu lalu coba lagi.");
       setLoading(false);
     }
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
+    void postAuth("/api/v1/auth/login", { email, password }, "Gagal masuk ke akun.");
+  };
+
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!name.trim() || !email.trim()) {
-      setErrorMsg("Nama lengkap dan email wajib diisi.");
+      setErrorMsg("Nama panggilan dan email wajib diisi.");
       return;
     }
-    if (password.length < 8) {
-      setErrorMsg("Kata sandi minimal 8 karakter.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setErrorMsg(`Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter.`);
       return;
     }
     if (!pdpConsent) {
-      setErrorMsg(
-        "Harap centang persetujuan pemrosesan data suara sesuai UU PDP."
-      );
+      setErrorMsg("Centang persetujuan pemrosesan suara dulu supaya ucapanmu bisa dinilai.");
       return;
     }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setErrorMsg(data.error ?? "Gagal mendaftarkan akun.");
-        setLoading(false);
-        return;
-      }
-      router.push(data.redirectTo ?? "/mulai");
-      router.refresh();
-    } catch {
-      setErrorMsg("Terjadi kesalahan koneksi ke server.");
-      setLoading(false);
-    }
+    void postAuth(
+      "/api/v1/auth/register",
+      { name, email, password },
+      "Gagal membuat akun."
+    );
   };
 
-  const handleQuickLogin = async (user: UserProfileDTO) => {
-    setErrorMsg(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testAccountId: user.id }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setErrorMsg(data.error ?? "Gagal masuk dengan akun testing.");
-        return;
-      }
-      router.push(data.redirectTo ?? "/");
-      router.refresh();
-    } catch {
-      setErrorMsg("Terjadi kesalahan koneksi ke server.");
-    } finally {
-      setLoading(false);
-    }
+  const handleQuickLogin = (user: UserProfileDTO) => {
+    void postAuth(
+      "/api/v1/auth/login",
+      { testAccountId: user.id },
+      "Gagal masuk dengan akun testing."
+    );
   };
 
-  const handleResetDatabase = async (targetUserId: string) => {
+  const handleResetDatabase = async () => {
     setErrorMsg(null);
     setResetMsg(null);
     setLoading(true);
@@ -139,9 +126,9 @@ export function LoginWorkspace({
       const res = await fetch("/api/v1/auth/reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: targetUserId }),
+        body: JSON.stringify({ userId: TEST_ACCOUNT_FRESH_ID }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
         setErrorMsg(data.error ?? "Gagal me-reset data testing.");
         return;
@@ -152,298 +139,118 @@ export function LoginWorkspace({
         router.refresh();
       }, 500);
     } catch {
-      setErrorMsg("Terjadi kesalahan koneksi ke server.");
+      setErrorMsg("Tidak bisa terhubung ke server. Periksa koneksimu lalu coba lagi.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[440px_minmax(0,1fr)]">
-      {/* Left Editorial Brand & Phonetic Specimen Column */}
-      <aside className="flex flex-col justify-between gap-8 bg-[var(--side-bg)] p-7 text-[var(--side-text)] lg:p-10">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-[#F7F5EE] no-underline">
-            <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
-              Ucapin
-            </span>
-            <span className="mt-1 block font-ipa text-sm text-[var(--side-text-2)]">
-              /ʊˈtʃapɪn/
-            </span>
-          </Link>
-          <Badge variant="teal">PostgreSQL Laragon</Badge>
-        </div>
+    <div className="min-h-screen lg:grid lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)]">
+      <aside className="flex flex-col gap-10 bg-[var(--side-bg)] p-7 text-[var(--side-text)] lg:sticky lg:top-0 lg:h-screen lg:justify-between lg:p-10">
+        <Link href="/masuk" className="w-fit text-[#F7F5EE] no-underline">
+          <span className="font-display text-3xl font-extrabold tracking-tight after:ml-1 after:inline-block after:h-2.5 after:w-2.5 after:rounded-full after:bg-[var(--coral)]">
+            Ucapin
+          </span>
+          <span className="mt-1 block font-ipa text-sm text-[var(--side-text-2)]">
+            /ʊˈtʃapɪn/
+          </span>
+        </Link>
 
-        <div className="hidden lg:grid lg:gap-4">
-          <div className="rounded-[18px] border border-[rgba(212,200,183,0.32)] bg-[rgba(19,41,46,0.55)] p-5 text-[#F7F5EE]">
-            <div className="flex items-center justify-between border-b border-[rgba(212,200,183,0.22)] pb-3">
-              <span className="text-xs font-bold text-[#D4C8B7]">
-                Status Database PostgreSQL Laragon
-              </span>
-              <span className="rounded-[8px] bg-[rgba(124,199,160,0.18)] px-2.5 py-0.5 text-xs font-bold text-[#7CC7A0]">
-                Terhubung · 127.0.0.1:5432
-              </span>
-            </div>
-            <div className="mt-3.5 grid grid-cols-2 gap-2.5 text-xs">
-              <div className="rounded-[10px] bg-[rgba(247,245,238,0.06)] p-2.5">
-                <b className="block font-display text-xl font-extrabold text-[#F7F5EE]">
-                  {testingUsers.length} Akun
-                </b>
-                <span className="text-[#D4C8B7]">Tabel User aktif</span>
-              </div>
-              <div className="rounded-[10px] bg-[rgba(247,245,238,0.06)] p-2.5">
-                <b className="block font-display text-xl font-extrabold text-[#F7F5EE]">
-                  12 Kalimat
-                </b>
-                <span className="text-[#D4C8B7]">4 tujuan belajar</span>
-              </div>
-              <div className="rounded-[10px] bg-[rgba(247,245,238,0.06)] p-2.5">
-                <b className="block font-display text-xl font-extrabold text-[#F7F5EE]">
-                  4 Skenario
-                </b>
-                <span className="text-[#D4C8B7]">12 node dialog</span>
-              </div>
-              <div className="rounded-[10px] bg-[rgba(247,245,238,0.06)] p-2.5">
-                <b className="block font-display text-xl font-extrabold text-[#F7F5EE]">
-                  5 Fonem
-                </b>
-                <span className="text-[#D4C8B7]">Katalog artikulasi</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[16px] border border-[rgba(212,200,183,0.22)] bg-[rgba(247,245,238,0.06)] p-4 text-xs leading-relaxed text-[#D4C8B7]">
-            <p className="font-bold text-[#F7F5EE]">
-              Alur Testing End-to-End (3 Langkah Onboarding + Latihan):
-            </p>
-            <ol className="mt-2 list-decimal space-y-1 pl-4">
-              <li>
-                <strong>Masuk / Daftar</strong> di halaman ini (<code>/masuk</code>).
+        <section aria-labelledby="patterns-title" className="hidden lg:block">
+          <h2
+            id="patterns-title"
+            className="font-display text-base font-bold text-[#F7F5EE]"
+          >
+            Lima bunyi yang paling sering tertukar
+          </h2>
+          <p className="mt-1 text-sm text-[var(--side-text-2)]">
+            Ucapin mencatat bunyi ini setiap kamu bicara, lalu menjadikannya
+            latihan besok.
+          </p>
+          <ul className="mt-4 divide-y divide-[rgba(212,200,183,0.16)] border-y border-[rgba(212,200,183,0.16)]">
+            {SOUND_PATTERNS.map((p) => (
+              <li
+                key={p.word}
+                className="flex items-baseline justify-between gap-3 py-2.5"
+              >
+                <span className="flex items-baseline gap-2">
+                  <span
+                    lang="en"
+                    className="font-display text-lg font-bold text-[#F7F5EE]"
+                  >
+                    {p.word}
+                  </span>
+                  <span lang="en" className="font-ipa text-sm text-[var(--side-text-2)]">
+                    {p.ipa}
+                  </span>
+                </span>
+                <span className="text-xs font-semibold text-[#F2937C]">
+                  {p.pattern}
+                </span>
               </li>
-              <li>
-                <strong>Langkah 1/3: Tujuan Belajar</strong> (<code>/mulai</code>: mulai dari 0 pilihan, 0/10 menit).
-              </li>
-              <li>
-                <strong>Langkah 2/3: Cek Mikrofon & Privasi</strong> (<code>/cek-mikrofon</code>).
-              </li>
-              <li>
-                <strong>Langkah 3/3: Latihan Pertama</strong> (<code>/latihan-ucapan?onboarding=1</code>).
-              </li>
-              <li>
-                <strong>Hasil Sesi</strong> (<code>/hasil</code>),{" "}
-                <strong>Bank Kesalahan</strong> (<code>/bank-kesalahan</code>), dan{" "}
-                <strong>Beranda</strong> (<code>/</code>) otomatis ter-update di database.
-              </li>
-            </ol>
-          </div>
-        </div>
+            ))}
+          </ul>
+        </section>
 
         <div>
-          <h2 className="font-display text-2xl font-extrabold text-[#F7F5EE]">
+          <p className="font-display text-2xl font-extrabold leading-tight text-[#F7F5EE]">
             Ubah salah ucap kemarin jadi lancar hari ini.
-          </h2>
+          </p>
           <p className="mt-2 text-sm text-[var(--side-text-2)]">
-            Tanpa skor aksen. Hanya mengukur seberapa jelas ucapanmu dipahami
-            dan seberapa rutin kamu berlatih.
+            Tanpa skor aksen. Yang diukur hanya seberapa jelas ucapanmu
+            dipahami dan seberapa rutin kamu berlatih.
           </p>
         </div>
       </aside>
 
-      {/* Right Authentication & Quick E2E Testing Panel */}
       <main
         id="main-content"
-        className="flex max-w-3xl flex-col gap-7 p-6 sm:p-10"
+        className="flex w-full max-w-xl flex-col gap-6 px-5 py-8 sm:px-10 lg:mx-auto lg:justify-center lg:py-12"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-2)]">
-              Pintu Masuk & Pengujian Alur
-            </p>
             <h1 className="font-display text-3xl font-extrabold">
-              Masuk atau mulai dari awal
+              {mode === "login" ? "Masuk ke Ucapin" : "Buat akun Ucapin"}
             </h1>
+            <p className="mt-1 text-sm text-[var(--text-2)]">
+              {mode === "login"
+                ? "Lanjutkan latihan bicaramu dari terakhir kali."
+                : "Dua menit untuk daftar, lalu langsung pilih tujuan belajarmu."}
+            </p>
           </div>
-          <ThemeToggle onLightSurface />
+          <ThemeToggle onLightSurface compact />
         </div>
 
-        {/* Pintasan akun testing: hanya dirender saat ENABLE_TEST_ACCOUNTS aktif di mode development */}
-        {showTestAccounts && (
-          <Card className="border-2 border-[var(--btn-bg)] bg-[var(--surface)] p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="coral">Pintasan Testing E2E</Badge>
-                  <span className="text-xs text-[var(--text-2)]">
-                    Terhubung ke tabel User di PostgreSQL Laragon
-                  </span>
-                </div>
-                <h2 className="mt-1.5 font-display text-xl font-bold">
-                  Pilih skenario akun dengan 1 klik
-                </h2>
-                <p className="text-sm text-[var(--text-2)]">
-                  Pilih <strong>Pelajar Baru</strong> untuk menguji alur dari
-                  Tujuan Belajar (`/mulai`), atau <strong>Pelajar Aktif</strong>{" "}
-                  untuk langsung masuk ke Beranda (`/`). Hanya muncul di mode
-                  pengembangan; akunnya diatur di <code>.env.local</code>.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-              {testingUsers.map((u) => {
-                const isFresh = !u.onboardingCompleted;
-                const isCurrent = u.id === currentUserId;
-                return (
-                  <div
-                    key={u.id}
-                    className={cn(
-                      "flex flex-col justify-between gap-3 rounded-control border-2 p-4 transition-all",
-                      isFresh
-                        ? "border-[var(--coral)] bg-[var(--tile-coral)]/45"
-                        : "border-[var(--line)] bg-[var(--bg)]"
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            aria-hidden="true"
-                            className={cn(
-                              "grid h-9 w-9 place-items-center rounded-full font-display text-xs font-extrabold",
-                              isFresh
-                                ? "bg-[var(--coral)] text-[var(--on-coral)]"
-                                : "bg-[var(--teal-800)] text-[#F7F5EE]"
-                            )}
-                          >
-                            {u.initials}
-                          </span>
-                          <div>
-                            <p className="font-display text-base font-bold leading-tight">
-                              {u.name}
-                            </p>
-                            <p className="text-xs text-[var(--text-2)]">
-                              {u.email}
-                            </p>
-                          </div>
-                        </span>
-                        {isCurrent && (
-                          <Badge variant="ok">
-                            <Check className="h-3 w-3" />
-                            <span>Aktif</span>
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="mt-3 space-y-1 text-xs text-[var(--text)]">
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          {isFresh
-                            ? "Akun Baru (0 menit, belum onboarding)"
-                            : `Aktif (${u.spokenTodayMinutes}/${u.dailyTargetMinutes} mnt, streak ${u.streakDays} hari)`}
-                        </p>
-                        <p>
-                          <strong>Arah setelah klik:</strong>{" "}
-                          {isFresh
-                            ? "Buka /mulai -> /cek-mikrofon -> Latihan"
-                            : "Langsung buka Beranda (/)"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant={isFresh ? "accent" : "default"}
-                      size="sm"
-                      disabled={loading}
-                      onClick={() => handleQuickLogin(u)}
-                      className="w-full"
-                    >
-                      <UserCheck className="h-4 w-4" aria-hidden="true" />
-                      <span>
-                        {isFresh
-                          ? "Uji Alur dari Awal (/mulai)"
-                          : "Masuk ke Beranda (Alya B1)"}
-                      </span>
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3.5">
-              <p className="text-xs text-[var(--text-2)]">
-                Ingin mengulang testing dari kondisi database bersih?
-              </p>
-              <Button
-                type="button"
-                variant="surface"
-                size="sm"
-                disabled={loading}
-                onClick={() => handleResetDatabase(TEST_ACCOUNT_FRESH_ID)}
-              >
-                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Reset Data Laragon & Mulai dari Nol</span>
-              </Button>
-            </div>
-
-            {resetMsg && (
-              <p
-                role="status"
-                className="mt-2.5 rounded-control bg-[var(--ok-wash)] px-3 py-2 text-xs font-bold text-[var(--ok)]"
-              >
-                {resetMsg}
-              </p>
-            )}
-          </Card>
-        )}
-
-        {/* Manual Login / Register Form Card */}
         <Card className="p-6">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] pb-4">
-            <div
-              className="inline-flex rounded-[12px] border border-[var(--line)] bg-[var(--bg)] p-1"
-              role="tablist"
-              aria-label="Pilih masuk atau daftar"
-            >
+          <div
+            className="mb-5 grid grid-cols-2 rounded-[12px] border border-[var(--line)] bg-[var(--bg)] p-1"
+            role="tablist"
+            aria-label="Pilih masuk atau daftar"
+          >
+            {(
+              [
+                { key: "login", label: "Masuk", icon: LogIn },
+                { key: "register", label: "Daftar", icon: UserPlus },
+              ] as const
+            ).map(({ key, label, icon: Icon }) => (
               <button
+                key={key}
                 type="button"
                 role="tab"
-                aria-selected={mode === "login"}
-                onClick={() => {
-                  setMode("login");
-                  setErrorMsg(null);
-                }}
+                aria-selected={mode === key}
+                onClick={() => switchMode(key)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-sm font-bold transition-colors",
-                  mode === "login"
+                  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[9px] px-4 text-sm font-bold transition-colors",
+                  mode === key
                     ? "bg-[var(--btn-bg)] text-[var(--btn-fg)]"
                     : "text-[var(--text-2)] hover:text-[var(--text)]"
                 )}
               >
-                <LogIn className="h-4 w-4" aria-hidden="true" />
-                <span>Masuk dengan Email</span>
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{label}</span>
               </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={mode === "register"}
-                onClick={() => {
-                  setMode("register");
-                  setErrorMsg(null);
-                  setEmail("");
-                  setPassword("");
-                }}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-sm font-bold transition-colors",
-                  mode === "register"
-                    ? "bg-[var(--btn-bg)] text-[var(--btn-fg)]"
-                    : "text-[var(--text-2)] hover:text-[var(--text)]"
-                )}
-              >
-                <UserPlus className="h-4 w-4" aria-hidden="true" />
-                <span>Daftar Akun Baru</span>
-              </button>
-            </div>
+            ))}
           </div>
 
           {errorMsg && (
@@ -458,107 +265,179 @@ export function LoginWorkspace({
           {mode === "login" ? (
             <form onSubmit={handleLoginSubmit} className="grid gap-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="login-email">Alamat Email</Label>
+                <Label htmlFor="login-email">Email</Label>
                 <Input
                   id="login-email"
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  placeholder="nama@email.com"
                 />
               </div>
-
               <div className="grid gap-1.5">
-                <Label htmlFor="login-password">Kata Sandi</Label>
+                <Label htmlFor="login-password">Kata sandi</Label>
                 <Input
                   id="login-password"
                   type="password"
-                  autoComplete="current-password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan kata sandi"
                 />
               </div>
-
-              <div className="mt-2 flex justify-end">
-                <Button type="submit" disabled={loading}>
-                  <span>{loading ? "Memproses..." : "Masuk Sekarang"}</span>
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </div>
+              <Button type="submit" disabled={loading} className="mt-1 w-full">
+                <span>{loading ? "Memeriksa..." : "Masuk"}</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
+              <p className="text-center text-sm text-[var(--text-2)]">
+                Belum punya akun?{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("register")}
+                  className="font-bold text-[var(--link)] underline"
+                >
+                  Daftar di sini
+                </button>
+              </p>
             </form>
           ) : (
             <form onSubmit={handleRegisterSubmit} className="grid gap-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="reg-name">Nama Panggilan / Lengkap</Label>
+                <Label htmlFor="reg-name">Nama panggilan</Label>
                 <Input
                   id="reg-name"
                   type="text"
                   required
+                  autoComplete="nickname"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Contoh: Dimas Pratama"
                 />
               </div>
-
               <div className="grid gap-1.5">
-                <Label htmlFor="reg-email">Alamat Email</Label>
+                <Label htmlFor="reg-email">Email</Label>
                 <Input
                   id="reg-email"
                   type="email"
-                  autoComplete="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="dimas@contoh.id"
                 />
               </div>
-
               <div className="grid gap-1.5">
-                <Label htmlFor="reg-password">Buat Kata Sandi</Label>
+                <Label htmlFor="reg-password">Kata sandi</Label>
                 <Input
                   id="reg-password"
                   type="password"
-                  autoComplete="new-password"
-                  minLength={8}
                   required
+                  minLength={MIN_PASSWORD_LENGTH}
+                  autoComplete="new-password"
+                  aria-describedby="reg-password-hint"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 8 karakter"
                 />
+                <p id="reg-password-hint" className="text-xs text-[var(--text-2)]">
+                  Minimal {MIN_PASSWORD_LENGTH} karakter.
+                </p>
               </div>
 
-              <label className="mt-1 flex cursor-pointer items-start gap-3 rounded-control border border-[var(--line)] bg-[var(--bg)] p-3 text-xs">
+              <label className="flex cursor-pointer items-start gap-3 rounded-control border border-[var(--line)] bg-[var(--bg)] p-3 text-xs leading-relaxed">
                 <input
                   type="checkbox"
                   checked={pdpConsent}
                   onChange={(e) => setPdpConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-[var(--coral)]"
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--coral)]"
                 />
                 <span>
-                  Saya menyetujui ketentuan privasi (UU PDP No. 27/2022):
-                  rekaman suara hanya diproses untuk penilaian kejelasan ucapan
-                  dan <strong>tidak disimpan</strong> kecuali saya mengaktifkan
-                  opsi simpan rekaman di pengaturan mikrofon.
+                  Saya setuju rekaman suara saya dikirim ke layanan pengenal
+                  suara (ElevenLabs) hanya untuk menilai kejelasan ucapan, sesuai
+                  UU PDP No. 27/2022. Ucapin <strong>tidak menyimpan</strong>{" "}
+                  rekaman kecuali saya mengaktifkannya di pengaturan mikrofon.
                 </span>
               </label>
 
-              <div className="mt-2 flex justify-end">
-                <Button type="submit" variant="accent" disabled={loading}>
-                  <span>
-                    {loading
-                      ? "Membuat Akun..."
-                      : "Daftar & Pilih Tujuan Belajar"}
-                  </span>
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </div>
+              <Button type="submit" variant="accent" disabled={loading} className="w-full">
+                <span>{loading ? "Membuat akun..." : "Daftar dan pilih tujuan"}</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Button>
             </form>
           )}
         </Card>
+
+        {showTestAccounts && (
+          <details className="group rounded-card border-[1.5px] border-dashed border-[var(--line)] p-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold">
+              <span>Akun testing (mode pengembangan)</span>
+              <ChevronDown
+                className="h-4 w-4 transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
+            </summary>
+            <p className="mt-2 text-xs text-[var(--text-2)]">
+              Hanya muncul saat <code>next dev</code> dan{" "}
+              <code>ENABLE_TEST_ACCOUNTS=&quot;true&quot;</code>. Email dan sandinya
+              diatur di <code>.env.local</code>.
+            </p>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {testingUsers.map((u) => {
+                const isFreshAccount = u.id === TEST_ACCOUNT_FRESH_ID;
+                const isCurrent = u.id === currentUserId;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleQuickLogin(u)}
+                    className="flex items-center gap-3 rounded-control border-[1.5px] border-[var(--line)] bg-[var(--surface)] p-3 text-left transition-colors hover:border-[var(--text-2)] disabled:opacity-60"
+                  >
+                    <UserCheck className="h-5 w-5 shrink-0 text-[var(--text-2)]" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold">
+                        {isFreshAccount ? "Pelajar baru" : "Pelajar aktif"}
+                      </span>
+                      <span className="block truncate text-xs text-[var(--text-2)]">
+                        {u.name} ·{" "}
+                        {u.onboardingCompleted ? `level ${u.cefrLevel}` : "belum onboarding"}
+                      </span>
+                    </span>
+                    {isCurrent && (
+                      <Badge variant="ok">
+                        <Check className="h-3 w-3" aria-hidden="true" />
+                        <span>Aktif</span>
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-[var(--text-2)]">
+                Hapus semua data dan isi ulang dari seed.
+              </p>
+              <Button
+                type="button"
+                variant="surface"
+                size="sm"
+                disabled={loading}
+                onClick={handleResetDatabase}
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Reset data testing</span>
+              </Button>
+            </div>
+            {resetMsg && (
+              <p
+                role="status"
+                className="mt-2.5 rounded-control bg-[var(--ok-wash)] px-3 py-2 text-xs font-bold text-[var(--ok)]"
+              >
+                {resetMsg}
+              </p>
+            )}
+          </details>
+        )}
       </main>
     </div>
   );

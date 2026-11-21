@@ -111,3 +111,10 @@ pnpm-debug.log*
 .idea/
 *.swp
 *.swo
+
+# =============================================================================
+# 8. Tes E2E (audio mikrofon palsu dan hasil Playwright)
+# =============================================================================
+e2e/.fixtures/
+test-results/
+playwright-report/

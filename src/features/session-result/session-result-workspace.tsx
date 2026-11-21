@@ -20,7 +20,6 @@ import { AudioTtsButton } from "@/components/shared/audio-tts-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type {
   MistakeItemDTO,
   SpeakingSessionDTO,
@@ -61,7 +60,7 @@ export function SessionResultWorkspace({
         : val === 3
         ? "Oke. Kita ulangi bagian yang belum mantap besok."
         : "Mantap! Besok coba skenario yang sedikit lebih menantang.";
-    setConfidenceFeedback(`${msg} (Tersimpan ke PostgreSQL Laragon)`);
+    setConfidenceFeedback(msg);
 
     try {
       await fetch("/api/v1/session-result", {
@@ -80,7 +79,6 @@ export function SessionResultWorkspace({
   if (!session) {
     return (
       <AppShell
-        prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Data dimuat dari PostgreSQL Laragon.`}
       >
         <Card className="p-8 text-center">
           <h1 className="font-display text-2xl font-extrabold">
@@ -148,32 +146,12 @@ export function SessionResultWorkspace({
             <span>
               {sessionHistory.length > 1
                 ? `${deltaScore >= 0 ? "+" : ""}${deltaScore} poin dibanding sesi pertama`
-                : "Sesi pertama berhasil tercatat di database"}
+                : "Sesi pertamamu sudah tercatat"}
             </span>
           </Badge>
         </div>
       </section>
 
-      <Card className="p-4">
-        <h2 className="font-display text-base font-bold">Progres Level CEFR</h2>
-        <p className="mt-2">
-          <span className="font-display text-3xl font-extrabold">
-            {user.cefrLevel}
-          </span>{" "}
-          <span className="text-sm text-[var(--text-2)]">
-            ({user.cefrProgressPct}%)
-          </span>
-        </p>
-        <Progress
-          value={user.cefrProgressPct}
-          tone="coral"
-          className="mt-2.5"
-        />
-        <p className="mt-2.5 text-xs text-[var(--text-2)]">
-          Dihitung dari kejelasan dan kelancaran di seluruh sesimu, bukan dari
-          aksen.
-        </p>
-      </Card>
 
       <section aria-labelledby="badges-heading">
         <h2 id="badges-heading" className="font-display text-lg font-bold">
@@ -216,7 +194,6 @@ export function SessionResultWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Riwayat kejelasan dan statistik akun"
-      prototypeNote={`Hasil Sesi ID: ${session.id} · Milik ${user.name} (${user.email}) dari PostgreSQL Laragon.`}
     >
       {/* Hero Clarity Ring Banner */}
       <section
@@ -261,13 +238,12 @@ export function SessionResultWorkspace({
         </div>
       </section>
 
-      {/* 4 Scores from Database */}
       <section aria-label="Skor per bagian">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <ScoreMetricCard
-            label="Pengucapan"
+            label="Ketepatan kata"
             score={session.pronunciationScore}
-            description={`${mistakes.length} kata di Bank Kesalahan`}
+            description="Seberapa yakin mesin menangkap tiap kata"
             tone="teal"
             icon={<Mic className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-teal)] text-[var(--tile-teal-fg)]"
@@ -279,22 +255,6 @@ export function SessionResultWorkspace({
             tone="ok"
             icon={<Gauge className="h-5 w-5" aria-hidden="true" />}
             tileClassName="bg-[var(--tile-green)] text-[var(--tile-green-fg)]"
-          />
-          <ScoreMetricCard
-            label="Tata bahasa"
-            score={session.grammarScore}
-            description="Struktur kalimat latihan"
-            tone="almost"
-            icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
-            tileClassName="bg-[var(--tile-ochre)] text-[var(--tile-ochre-fg)]"
-          />
-          <ScoreMetricCard
-            label="Kosakata"
-            score={session.vocabularyScore}
-            description={`Sesuai level ${user.cefrLevel}`}
-            tone="coral"
-            icon={<MessageSquare className="h-5 w-5" aria-hidden="true" />}
-            tileClassName="bg-[var(--tile-coral)] text-[var(--tile-coral-fg)]"
           />
         </div>
       </section>

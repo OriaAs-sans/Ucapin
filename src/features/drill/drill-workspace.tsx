@@ -8,7 +8,6 @@ import {
   ArrowRight,
   BookOpen,
   Check,
-  Mic,
   RotateCcw,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -60,6 +59,7 @@ export function DrillWorkspace({
   const [selectedCoachWord, setSelectedCoachWord] = React.useState<string>("");
   const [coachOpen, setCoachOpen] = React.useState(false);
   const [savedWordsToDb, setSavedWordsToDb] = React.useState<string[]>([]);
+  const [advancedBankWords, setAdvancedBankWords] = React.useState<string[]>([]);
   const [finishingSession, setFinishingSession] = React.useState(false);
   const [completedHistory, setCompletedHistory] = React.useState<
     {
@@ -94,30 +94,45 @@ export function DrillWorkspace({
 
   const handleRecordingEvaluated = React.useCallback(
     async (rec: RecordedSpeechResult) => {
-      setMicState("processing");
-      window.setTimeout(async () => {
+      {
         const evaluated = assessSpokenUtterance({
           referenceText: current.text,
-          spokenTranscript: rec.transcript,
+          spokenWords: rec.words,
           defaultTargetMarks: current.targetMarks,
-          durationMs: rec.durationMs,
-          confidence: rec.confidence,
         });
 
         setAssessment(evaluated);
         setSelectedCoachWord(evaluated.primaryFocusWord);
         setMicState("done");
+        setAdvancedBankWords([]);
+
+        // Kata bank yang kini terdengar jelas naik tahap jadwal ulangnya.
+        fetch("/api/v1/mistakes/review", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            results: Object.values(evaluated.wordDetails).map((d) => ({
+              word: d.word,
+              status: d.status,
+            })),
+          }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.ok && Array.isArray(d.advanced)) setAdvancedBankWords(d.advanced);
+          })
+          .catch(() => {});
 
         setCompletedHistory((prev) => [
           ...prev,
           {
             referenceText: current.text,
             assessment: evaluated,
-            durationSec: Math.max(5, Math.round(rec.durationMs / 1000)),
+            durationSec: Math.max(1, Math.round(rec.durationMs / 1000)),
           },
         ]);
 
-        // Persist ONLY real mispronounced words into Laragon PostgreSQL MistakeItem table
+        // Hanya kata yang benar-benar meleset yang masuk Bank Kesalahan.
         if (evaluated.flaggedMistakes.length > 0) {
           const savedList: string[] = [];
           for (const m of evaluated.flaggedMistakes) {
@@ -144,7 +159,7 @@ export function DrillWorkspace({
         } else {
           setSavedWordsToDb([]);
         }
-      }, 350);
+      }
     },
     [current]
   );
@@ -187,12 +202,11 @@ export function DrillWorkspace({
           mode: "drill",
           scenarioTitle: `Latihan Ucapan: ${current.category}`,
           durationSec: Math.max(60, totalSec),
-          addedMinutes: Math.max(2, Math.ceil(totalSec / 60) + 1),
-          clarityScore: avgScore(0, 85),
-          pronunciationScore: avgScore(1, 82),
-          fluencyScore: avgScore(2, 86),
-          grammarScore: 88,
-          vocabularyScore: 90,
+          // Menit bicara dihitung dari lama rekaman sungguhan.
+          addedMinutes: Math.max(1, Math.round(totalSec / 60)),
+          clarityScore: avgScore(0, 0),
+          pronunciationScore: avgScore(1, 0),
+          fluencyScore: avgScore(2, 0),
           utterances: historyToSave.map((h) => ({
             referenceText: h.referenceText,
             transcript: h.assessment.spokenTranscript,
@@ -245,7 +259,8 @@ export function DrillWorkspace({
       status: "work" as const,
       heardAs: "Klik kata pada kalimat untuk melihat analisis bunyinya",
       note: current.coachNote,
-      phonemeBreakdown: current.phonemeBreakdown,
+      // Belum ada rekaman: jangan tampilkan angka apa pun.
+      phonemeBreakdown: [],
       articulation: {
         ...defaultArticulation,
         steps: current.coachSteps,
@@ -312,12 +327,13 @@ export function DrillWorkspace({
             </p>
           </div>
 
+          {activeCoachDetail.phonemeBreakdown.length > 0 && (
           <section aria-labelledby="ph-breakdown-title">
             <h3
               id="ph-breakdown-title"
               className="font-display text-base font-bold"
             >
-              Rincian bunyi kata &ldquo;{activeCoachDetail.word}&rdquo;
+              Seberapa yakin kata &ldquo;{activeCoachDetail.word}&rdquo; tertangkap
             </h3>
             <div className="mt-2.5 grid gap-2.5">
               {activeCoachDetail.phonemeBreakdown.map((ph, i) => (
@@ -350,6 +366,7 @@ export function DrillWorkspace({
               ))}
             </div>
           </section>
+          )}
 
           <section
             aria-labelledby="articulation-title"
@@ -441,7 +458,6 @@ export function DrillWorkspace({
     <AppShell
       rightPanel={rightPanel}
       rightPanelLabel="Catatan pelatih"
-      prototypeNote={`Sesi aktif: ${user.name} (${user.email}) · Penilaian suara real-time aktif & tersambung ke PostgreSQL Laragon.`}
     >
       {isFirstOnboardingStep && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border-2 border-[var(--coral)] bg-[var(--tile-coral)] px-5 py-3.5">
@@ -537,6 +553,7 @@ export function DrillWorkspace({
         translation={current.translation}
         marks={assessment ? assessment.marks : {}}
         showMarks={Boolean(assessment)}
+        revealKey={completedHistory.length}
         onWordSelect={(word) => {
           setSelectedCoachWord(word);
           setCoachOpen(true);
@@ -564,9 +581,10 @@ export function DrillWorkspace({
       {/* Real Dynamic Assessment Result & 4 Score Metric Cards */}
       {assessment && (
         <section
+          key={completedHistory.length}
           aria-labelledby="drill-result-title"
           aria-live="polite"
-          className="grid gap-4"
+          className="enter-rise grid gap-4"
         >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2
@@ -650,6 +668,14 @@ export function DrillWorkspace({
             ))}
           </div>
 
+          {advancedBankWords.length > 0 && (
+            <p className="rounded-control border-[1.5px] border-[var(--ok)] bg-[var(--ok-wash)] px-4 py-2.5 text-sm font-semibold text-[var(--ok)]">
+              Kata <strong lang="en">{advancedBankWords.join(", ")}</strong> dari Bank
+              Kesalahan sekarang terdengar jelas. Jadwal ulangnya mundur ke tahap
+              berikutnya.
+            </p>
+          )}
+
           {savedWordsToDb.length > 0 && (
             <p className="text-sm text-[var(--text-2)]">
               Kata{" "}
@@ -659,7 +685,7 @@ export function DrillWorkspace({
                 href="/bank-kesalahan"
                 className="font-bold text-[var(--link)] underline"
               >
-                Bank Kesalahan di PostgreSQL Laragon
+                Bank Kesalahan
               </Link>
               .
             </p>

@@ -6,7 +6,6 @@ export interface AppShellProps {
   children: React.ReactNode;
   rightPanel?: React.ReactNode;
   rightPanelLabel?: string;
-  prototypeNote?: string;
   className?: string;
 }
 
@@ -14,7 +13,6 @@ export function AppShell({
   children,
   rightPanel,
   rightPanelLabel = "Panel informasi dan progres",
-  prototypeNote = "Prototype terhubung ke Laragon PostgreSQL: nama, angka, dan skor adalah contoh data.",
   className,
 }: AppShellProps) {
   return (
@@ -38,20 +36,15 @@ export function AppShell({
 
       <main
         id="main-content"
-        className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-7"
+        className="min-w-0 px-4 pb-28 pt-6 sm:px-8 lg:px-10 lg:py-9"
       >
-        {prototypeNote && (
-          <p className="mb-6 inline-flex items-center gap-2 rounded-pill border-[1.5px] border-dashed border-[var(--line)] px-3.5 py-1 text-xs text-[var(--text-2)]">
-            {prototypeNote}
-          </p>
-        )}
         <div className="flex flex-col gap-7 min-w-0">{children}</div>
       </main>
 
       {rightPanel && (
         <aside
           aria-label={rightPanelLabel}
-          className="flex flex-col gap-6 border-t-[1.5px] border-[var(--line)] bg-[var(--surface)] px-5 py-7 xl:min-h-screen xl:border-l-[1.5px] xl:border-t-0"
+          className="flex flex-col gap-6 border-t-[1.5px] border-[var(--line)] bg-[var(--surface)] px-5 pb-28 pt-7 lg:col-start-2 lg:pb-7 xl:col-start-auto xl:min-h-screen xl:border-l-[1.5px] xl:border-t-0"
         >
           {rightPanel}
         </aside>

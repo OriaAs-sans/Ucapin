@@ -111,7 +111,6 @@
   --r-control: 14px;
   --r-pill: 999px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.3, 1.25, 0.6, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -261,7 +260,7 @@ h1, h2, h3, h4 {
   display: grid;
   place-items: center;
   box-shadow: var(--shadow-float);
-  transition: background-color 200ms var(--ease-out), transform 220ms var(--ease-spring);
+  transition: background-color 200ms var(--ease-out), transform 220ms var(--ease-out);
 }
 .mic-btn:hover {
   transform: scale(1.04);
@@ -296,9 +295,114 @@ h1, h2, h3, h4 {
   }
 }
 
+/* Level suara saat merekam: cincin mengikuti --mic-level (0..1) dari AnalyserNode */
+.mic-btn[data-state="recording"] {
+  box-shadow: 0 0 0 calc(var(--mic-level, 0) * 22px) rgba(255, 122, 89, 0.22), var(--shadow-float);
+  transition: box-shadow 90ms linear, background-color 200ms var(--ease-out);
+}
+
+/* Momen utama: garis koreksi "digoreskan" kata demi kata setelah penilaian selesai.
+   --i adalah urutan kata; garis turun dari bawah lalu menetap seperti tinta pena. */
+.mk-reveal {
+  animation: mk-ink 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+@keyframes mk-ink {
+  from {
+    text-decoration-color: transparent;
+    text-underline-offset: 0.7em;
+  }
+}
+.leader-draw {
+  transform-origin: top;
+  animation: leader-draw 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms + 260ms);
+}
+@keyframes leader-draw {
+  from {
+    transform: scaleY(0);
+  }
+}
+.tag-drop {
+  animation: tag-drop 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms + 380ms);
+}
+@keyframes tag-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Giliran chat dan panel hasil masuk tanpa melompat */
+.enter-rise {
+  animation: enter-rise 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Bar data tumbuh dari pangkalnya saat pertama kali tampil */
+.grow-x {
+  transform-origin: left;
+  animation: grow-x 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.grow-y {
+  transform-origin: bottom;
+  animation: grow-y 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* Gerak dikurangi: tanpa perpindahan posisi, tetapi perubahan status tetap terlihat lewat opacity dan warna */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    transition-duration: 1ms !important;
-    animation: none !important;
+  .mic-btn,
+  .mic-btn:hover,
+  .mic-btn:active {
+    transform: none;
+  }
+  .mic-btn[data-state="recording"]::before,
+  .mic-btn[data-state="recording"]::after {
+    animation: none;
+    opacity: 0;
+  }
+  .mk-reveal {
+    animation-name: mk-fade;
+    animation-duration: 200ms;
+  }
+  .leader-draw,
+  .tag-drop,
+  .enter-rise {
+    animation-name: fade-only;
+    animation-duration: 160ms;
+  }
+  .grow-x,
+  .grow-y {
+    animation: none;
+  }
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+}
+@keyframes mk-fade {
+  from {
+    text-decoration-color: transparent;
+  }
+}
+@keyframes fade-only {
+  from {
+    opacity: 0;
   }
 }

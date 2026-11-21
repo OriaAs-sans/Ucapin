@@ -321,139 +321,222 @@ export function getArticulationGuideForWord(
   return PHONEME_GUIDES_MAP[key] ?? PHONEME_GUIDES_MAP["/v/"];
 }
 
+export interface SpokenWord {
+  text: string;
+  /** Keyakinan pengenal suara 0..1 untuk kata ini. */
+  confidence: number;
+  start: number;
+  end: number;
+}
+
+// Kata fungsi pendek yang hanya terlewat tidak masuk Bank Kesalahan:
+// itu soal tata bahasa atau tempo, bukan bunyi.
+const FUNCTION_WORDS = new Set([
+  "a", "an", "the", "to", "of", "in", "on", "at", "and", "or", "i", "is", "it", "my", "for",
+]);
+
+const VOICED_TH_WORDS = new Set([
+  "this", "that", "the", "they", "then", "there", "these", "those", "them", "their", "with",
+]);
+
+const OK_CONFIDENCE = 0.7;
+const ALMOST_CONFIDENCE = 0.4;
+
+function editDistance(a: string, b: string): number {
+  const dp: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+// Mengenali pola salah ucap khas penutur Indonesia dari pasangan kata acuan dan kata yang terdengar.
+function detectL1Pattern(
+  expected: string,
+  heard: string
+): { phonemeKey: string; note: string } | null {
+  const known = INDONESIAN_L1_SUBSTITUTIONS[expected];
+  if (known && known.substitutes.includes(heard)) {
+    return { phonemeKey: known.phonemeKey, note: known.errorNote };
+  }
+  for (const suffix of ["ed", "d", "t", "s", "es"]) {
+    if (expected.endsWith(suffix) && expected.slice(0, -suffix.length) === heard) {
+      return { phonemeKey: "/-ed/", note: `konsonan akhir -${suffix} hilang` };
+    }
+  }
+  if (expected.includes("v") && heard === expected.replace(/v/g, "f")) {
+    return { phonemeKey: "/v/", note: "/v/ jadi /f/" };
+  }
+  if (expected.startsWith("th")) {
+    const rest = expected.slice(2);
+    if (heard === `t${rest}` || heard === `d${rest}`) {
+      return VOICED_TH_WORDS.has(expected)
+        ? { phonemeKey: "/ð/", note: "/ð/ jadi /d/" }
+        : { phonemeKey: "/θ/", note: "/θ/ jadi /t/" };
+    }
+  }
+  if (expected.includes("sh") && heard === expected.replace(/sh/g, "s")) {
+    return { phonemeKey: "/ʃ/", note: "/ʃ/ jadi /s/" };
+  }
+  return null;
+}
+
+type AlignedPair =
+  | { kind: "match"; refIdx: number; spoken: SpokenWord }
+  | { kind: "sub"; refIdx: number; spoken: SpokenWord }
+  | { kind: "missing"; refIdx: number };
+
+const INSERT_COST = 0.8;
+const DELETE_COST = 1;
+
+function substitutionCost(ref: string, hyp: string): number {
+  if (ref === hyp) return 0;
+  if (detectL1Pattern(ref, hyp)) return 0.4;
+  const ratio = editDistance(ref, hyp) / Math.max(ref.length, hyp.length);
+  return ratio <= 0.4 ? 0.6 : 1.2;
+}
+
+// Penyejajaran kata acuan dengan kata terucap (edit distance tingkat kata).
+function alignWords(refTokens: string[], spoken: SpokenWord[]): AlignedPair[] {
+  const hyp = spoken.map((w) => cleanToken(w.text));
+  const n = refTokens.length;
+  const m = hyp.length;
+  const dp: number[][] = Array.from({ length: n + 1 }, () => Array<number>(m + 1).fill(0));
+  for (let i = 1; i <= n; i++) dp[i][0] = i * DELETE_COST;
+  for (let j = 1; j <= m; j++) dp[0][j] = j * INSERT_COST;
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + DELETE_COST,
+        dp[i][j - 1] + INSERT_COST,
+        dp[i - 1][j - 1] + substitutionCost(refTokens[i - 1], hyp[j - 1])
+      );
+    }
+  }
+
+  const pairs: AlignedPair[] = [];
+  let i = n;
+  let j = m;
+  const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+  while (i > 0) {
+    if (j > 0 && near(dp[i][j], dp[i - 1][j - 1] + substitutionCost(refTokens[i - 1], hyp[j - 1]))) {
+      const kind = refTokens[i - 1] === hyp[j - 1] ? "match" : "sub";
+      pairs.push({ kind, refIdx: i - 1, spoken: spoken[j - 1] });
+      i--;
+      j--;
+    } else if (j > 0 && near(dp[i][j], dp[i][j - 1] + INSERT_COST)) {
+      j--;
+    } else {
+      pairs.push({ kind: "missing", refIdx: i - 1 });
+      i--;
+    }
+  }
+  return pairs.reverse();
+}
+
 /**
- * Evaluates a user's spoken transcript (from Web Speech API or manual test input)
- * against the reference English sentence.
+ * Menilai ucapan pelajar dari hasil pengenal suara (kata, keyakinan, waktu)
+ * terhadap kalimat acuan. Skor utama adalah Kejelasan: berapa banyak kata yang
+ * dipahami mesin pengenal suara, bukan kemiripan dengan aksen tertentu.
  */
 export function assessSpokenUtterance(params: {
   referenceText: string;
-  spokenTranscript: string;
+  spokenWords: SpokenWord[];
   defaultTargetMarks: Record<string, WordMark>;
-  durationMs: number;
-  confidence: number;
 }): UtteranceAssessmentResult {
-  const {
-    referenceText,
-    spokenTranscript,
-    defaultTargetMarks,
-    durationMs,
-    confidence,
-  } = params;
+  const { referenceText, spokenWords, defaultTargetMarks } = params;
 
-  const refRawTokens = referenceText.split(/\s+/).filter(Boolean);
-  const spokenTokens = spokenTranscript
-    .split(/\s+/)
-    .map(cleanToken)
-    .filter(Boolean);
+  const refRawTokens = referenceText.split(/\s+/).filter((t) => cleanToken(t));
+  const refTokens = refRawTokens.map(cleanToken);
+  const pairs = alignWords(refTokens, spokenWords);
+  // Bila sebagian besar kata tidak cocok, kemungkinan pelajar membaca kalimat lain
+  // atau rekamannya berisik: jangan isi Bank Kesalahan dengan tebakan.
+  const alignedRatio =
+    pairs.filter((p) => p.kind === "match" || (p.kind === "sub" && detectL1Pattern(refTokens[p.refIdx], cleanToken(p.spoken.text)))).length /
+    Math.max(1, refTokens.length);
+  const canBank = spokenWords.length > 0 && alignedRatio >= 0.5;
 
-  const usedSpokenIndices = new Set<number>();
   const marks: Record<string, WordMark> = {};
   const wordDetails: Record<string, WordCoachDetail> = {};
   const flaggedMistakes: UtteranceAssessmentResult["flaggedMistakes"] = [];
-
   let okCount = 0;
   let almostCount = 0;
-  let workCount = 0;
-  let matchedWordCount = 0;
+  let recognizedCount = 0;
+  let confidenceSum = 0;
 
-  refRawTokens.forEach((rawToken, idx) => {
-    const cleanWord = rawToken.replace(/[^A-Za-z']/g, "");
+  for (const pair of pairs) {
+    const cleanWord = refRawTokens[pair.refIdx].replace(/[^A-Za-z']/g, "");
     const lowerWord = cleanWord.toLowerCase();
     const l1Info = INDONESIAN_L1_SUBSTITUTIONS[lowerWord];
-    const defaultMark =
-      defaultTargetMarks[cleanWord] ?? defaultTargetMarks[lowerWord];
-    const ipa = l1Info?.ipa ?? defaultMark?.ipa ?? `/${lowerWord}/`;
-    const articulation = getArticulationGuideForWord(
-      cleanWord,
-      l1Info?.errorNote ?? defaultMark?.note
-    );
+    const defaultMark = defaultTargetMarks[cleanWord] ?? defaultTargetMarks[lowerWord];
+    const ipa = l1Info?.ipa ?? defaultMark?.ipa ?? "";
+    const knownNote = l1Info?.errorNote ?? defaultMark?.note;
 
-    // Search in a window around the expected index in spokenTokens
-    let exactMatchIdx = -1;
-    let subMatchIdx = -1;
-    let matchedSubstitute = "";
+    let status: PhonemeStatus;
+    let heardAs: string;
+    let errorPattern = "";
+    let phonemeKey: string | null = null;
+    let confidence = 0;
 
-    for (let sIdx = 0; sIdx < spokenTokens.length; sIdx++) {
-      if (usedSpokenIndices.has(sIdx)) continue;
-      const candidate = spokenTokens[sIdx];
-      if (candidate === lowerWord) {
-        exactMatchIdx = sIdx;
-        break;
-      }
-      if (l1Info && l1Info.substitutes.includes(candidate)) {
-        subMatchIdx = sIdx;
-        matchedSubstitute = candidate;
-      } else if (
-        lowerWord.length >= 4 &&
-        (lowerWord.startsWith(candidate) || candidate.startsWith(lowerWord.slice(0, -2))) &&
-        Math.abs(sIdx - idx) <= 3
-      ) {
-        subMatchIdx = sIdx;
-        matchedSubstitute = candidate;
-      }
-    }
-
-    let status: PhonemeStatus = "ok";
-    let note = "Ucapan jelas";
-    let heardAs = `terdengar jelas “${cleanWord}”`;
-
-    if (exactMatchIdx !== -1) {
-      usedSpokenIndices.add(exactMatchIdx);
-      matchedWordCount++;
-
-      // If browser ASR confidence was low on a tricky Indonesian L1 word, mark as "almost"
-      if (confidence < 0.76 && (l1Info || defaultMark)) {
-        status = "almost";
-        note = l1Info?.errorNote ?? defaultMark?.note ?? "perjelas konsonan";
-        heardAs = `hampir jelas (${note})`;
-        almostCount++;
-      } else {
+    if (pair.kind === "match") {
+      confidence = pair.spoken.confidence;
+      recognizedCount++;
+      confidenceSum += confidence;
+      if (confidence >= OK_CONFIDENCE) {
         status = "ok";
-        note = "Terdengar jelas";
-        heardAs = `terdengar jelas “${cleanWord}”`;
-        okCount++;
+        heardAs = "terdengar jelas";
+      } else {
+        status = confidence >= ALMOST_CONFIDENCE ? "almost" : "work";
+        heardAs = status === "almost" ? "terdengar, tapi kurang mantap" : "nyaris tidak dikenali";
+        errorPattern = knownNote ?? "perjelas bunyinya";
+        phonemeKey = l1Info?.phonemeKey ?? null;
       }
-    } else if (subMatchIdx !== -1) {
-      usedSpokenIndices.add(subMatchIdx);
-      matchedWordCount++;
+    } else if (pair.kind === "sub") {
+      const heard = cleanToken(pair.spoken.text);
+      const pattern = detectL1Pattern(lowerWord, heard);
       status = "work";
-      const rule =
-        l1Info?.errorNote ??
-        defaultMark?.note ??
-        `terdengar “${matchedSubstitute}”`;
-      note = `terdengar “${matchedSubstitute}” (${rule})`;
-      heardAs = `terdengar “${matchedSubstitute}”`;
-      workCount++;
+      heardAs = `terdengar “${heard}”`;
+      errorPattern = pattern?.note ?? knownNote ?? `terdengar “${heard}”`;
+      phonemeKey = pattern?.phonemeKey ?? l1Info?.phonemeKey ?? null;
     } else {
-      // Word was not detected in spoken transcript
       status = "work";
-      const rule = l1Info?.errorNote ?? defaultMark?.note;
-      note = rule
-        ? `belum terdengar jelas (${rule})`
-        : "kata terlewat / belum terdengar";
-      heardAs = "kata belum terdengar jelas";
-      workCount++;
+      heardAs = "tidak terdengar";
+      errorPattern = knownNote ?? "kata terlewat";
+      phonemeKey = l1Info?.phonemeKey ?? null;
     }
+
+    if (status === "ok") okCount++;
+    if (status === "almost") almostCount++;
+
+    const articulation =
+      (phonemeKey ? PHONEME_GUIDES_MAP[phonemeKey] : undefined) ??
+      getArticulationGuideForWord(cleanWord, errorPattern);
 
     if (status !== "ok") {
-      marks[cleanWord] = {
-        status,
-        note,
-        ipa,
-      };
-      flaggedMistakes.push({
-        word: cleanWord,
-        ipa,
-        phoneme: articulation.phonemeLabel,
-        errorPattern: l1Info?.errorNote ?? defaultMark?.note ?? "artikulasi",
-        heardAs,
-        status,
-      });
+      marks[cleanWord] = { status, note: errorPattern, ipa };
+      const isSoundIssue = phonemeKey !== null || pair.kind === "sub";
+      const skipFunctionWord = pair.kind === "missing" && FUNCTION_WORDS.has(lowerWord);
+      // "Hampir" tanpa pola bunyi yang dikenal tidak cukup kuat untuk dijadikan latihan.
+      const strongEnough = status === "work" || phonemeKey !== null;
+      if (canBank && strongEnough && !skipFunctionWord && (isSoundIssue || lowerWord.length >= 4)) {
+        flaggedMistakes.push({
+          word: cleanWord,
+          ipa,
+          phoneme: articulation.phonemeLabel,
+          errorPattern,
+          heardAs,
+          status,
+        });
+      }
     }
-
-    const targetScore =
-      status === "ok" ? 94 : status === "almost" ? 73 : 41;
-    const baseScore = status === "ok" ? 96 : status === "almost" ? 86 : 78;
 
     wordDetails[cleanWord] = {
       word: cleanWord,
@@ -462,59 +545,45 @@ export function assessSpokenUtterance(params: {
       heardAs,
       note:
         status === "ok"
-          ? `Kata “${cleanWord}” sudah kamu ucapkan dengan jelas dan mudah dipahami.`
-          : `Pada kata “${cleanWord}”, ${heardAs}. ${articulation.title}.`,
+          ? `Kata “${cleanWord}” terdengar jelas dan mudah dipahami.`
+          : `Kata “${cleanWord}” ${heardAs}${errorPattern ? ` (${errorPattern})` : ""}.`,
       phonemeBreakdown: [
-        {
-          phoneme: articulation.phonemeLabel,
-          score: targetScore,
-          status,
-        },
-        {
-          phoneme: "vokal",
-          score: baseScore,
-          status: "ok",
-        },
-        {
-          phoneme: "ritme",
-          score: status === "ok" ? 92 : 80,
-          status: status === "ok" ? "ok" : "almost",
-        },
+        { phoneme: articulation.phonemeLabel, score: Math.round(confidence * 100), status },
       ],
       articulation,
     };
-  });
+  }
 
-  const totalRefWords = Math.max(1, refRawTokens.length);
-  const completenessScore = Math.min(
-    100,
-    Math.round((matchedWordCount / totalRefWords) * 100)
-  );
-  const pronunciationScore = Math.max(
-    30,
-    Math.min(
-      100,
-      Math.round(
-        ((okCount * 100 + almostCount * 74 + workCount * 38) / totalRefWords)
-      )
-    )
-  );
+  const total = Math.max(1, refTokens.length);
+  const spokenCount = pairs.filter((p) => p.kind !== "missing").length;
+  const clarityScore = Math.round(((okCount + almostCount * 0.65) / total) * 100);
+  const wordAccuracy =
+    recognizedCount > 0 ? Math.round((confidenceSum / recognizedCount) * 100) : 0;
+  const completeness = Math.round((spokenCount / total) * 100);
 
-  // Fluency based on duration & completeness
-  const durationSec = Math.max(1.5, durationMs / 1000);
-  const wpm = Math.round((matchedWordCount / durationSec) * 60);
-  const fluencyScore =
-    matchedWordCount === 0
-      ? 35
-      : wpm >= 85 && wpm <= 165
-      ? Math.min(98, 84 + Math.round((okCount / totalRefWords) * 12))
-      : Math.max(55, 78 - Math.abs(115 - wpm) / 4);
-
-  const clarityScore = Math.round(
-    pronunciationScore * 0.5 +
-      completenessScore * 0.3 +
-      Math.round(fluencyScore) * 0.2
-  );
+  // Kelancaran dari waktu bicara nyata: tempo (kata per menit) dan jeda panjang.
+  let fluencyScore = 0;
+  let fluencyDesc = "Belum ada ucapan yang terdengar";
+  if (spokenWords.length >= 2) {
+    const span = Math.max(
+      0.5,
+      spokenWords[spokenWords.length - 1].end - spokenWords[0].start
+    );
+    const wpm = Math.round((spokenWords.length / span) * 60);
+    let longPauses = 0;
+    for (let k = 1; k < spokenWords.length; k++) {
+      if (spokenWords[k].start - spokenWords[k - 1].end > 0.7) longPauses++;
+    }
+    // Tempo hanya berarti bila kalimat yang diucapkan memang kalimat acuan.
+    // Tempo bicara natural kira-kira 110 sampai 170 kata per menit.
+    const tempoPenalty = wpm < 110 ? (110 - wpm) * 0.6 : wpm > 170 ? (wpm - 170) * 0.6 : 0;
+    const tempoScore = Math.max(0, Math.min(100, 100 - tempoPenalty - longPauses * 10));
+    fluencyScore = Math.round(tempoScore * Math.min(1, alignedRatio * 1.1));
+    fluencyDesc = `${wpm} kata/menit, ${longPauses} jeda panjang`;
+  } else if (spokenWords.length === 1) {
+    fluencyScore = 40;
+    fluencyDesc = "Baru satu kata yang terdengar";
+  }
 
   const scores: ScoreBreakdownItem[] = [
     {
@@ -522,40 +591,37 @@ export function assessSpokenUtterance(params: {
       score: clarityScore,
       desc:
         clarityScore >= 85
-          ? "Ucapanmu sangat mudah dipahami"
-          : clarityScore >= 70
-          ? "Cukup jelas, perbaiki kata bergaris bawah"
-          : "Beberapa kata penting masih belum jelas",
+          ? "Ucapanmu mudah dipahami"
+          : clarityScore >= 65
+          ? "Cukup jelas, ulangi kata yang bergaris bawah"
+          : "Beberapa kata penting belum tertangkap",
     },
     {
-      label: "Ketepatan bunyi",
-      score: pronunciationScore,
-      desc: `${okCount} dari ${totalRefWords} kata terdengar tepat`,
+      label: "Ketepatan kata",
+      score: wordAccuracy,
+      desc: `${okCount} dari ${total} kata terdengar mantap`,
     },
-    {
-      label: "Kelancaran",
-      score: Math.round(fluencyScore),
-      desc: `${wpm} kata/menit (${durationSec.toFixed(1)} detik)`,
-    },
+    { label: "Kelancaran", score: fluencyScore, desc: fluencyDesc },
     {
       label: "Kelengkapan",
-      score: completenessScore,
-      desc: `${matchedWordCount} dari ${totalRefWords} kata terucap`,
+      score: completeness,
+      desc: `${spokenCount} dari ${total} kata terucap`,
     },
   ];
 
-  const firstProblemWord =
+  const primaryFocusWord =
     flaggedMistakes.find((m) => m.status === "work")?.word ??
     flaggedMistakes[0]?.word ??
+    Object.values(wordDetails).find((d) => d.status !== "ok")?.word ??
     refRawTokens[0]?.replace(/[^A-Za-z']/g, "") ??
-    "worked";
+    "";
 
   return {
-    spokenTranscript,
+    spokenTranscript: spokenWords.map((w) => w.text).join(" "),
     marks,
     scores,
     wordDetails,
-    primaryFocusWord: firstProblemWord,
+    primaryFocusWord,
     flaggedMistakes,
   };
 }

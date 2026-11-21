@@ -5,8 +5,13 @@ const prisma = new PrismaClient();
 
 async function main() {
   await seedUcapinDatabase(prisma);
+  const [drillCount, scenarioCount, nodeCount] = await Promise.all([
+    prisma.drillSentence.count(),
+    prisma.scenario.count(),
+    prisma.scenarioNode.count(),
+  ]);
   console.log(
-    "Database Ucapin di Laragon PostgreSQL berhasil di-seed (2 akun testing, 4 tujuan belajar, 12 kalimat drill, 4 skenario roleplay, 5 panduan fonem)."
+    `Database Ucapin di Laragon PostgreSQL berhasil di-seed (2 akun testing, 4 tujuan belajar, ${drillCount} kalimat drill, ${scenarioCount} skenario roleplay, ${nodeCount} giliran roleplay, 5 panduan fonem).`
   );
 }
 

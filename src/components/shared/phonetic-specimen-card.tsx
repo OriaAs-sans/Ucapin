@@ -116,7 +116,7 @@ export function PhoneticSpecimenCard({
           </p>
           <p className="mt-1 text-[#D4C8B7]">
             Selesaikan sesi Latihan Ucapan atau Roleplay pertamamu. Setiap bunyi
-            yang meleset akan otomatis masuk ke sini dari database.
+            yang meleset akan otomatis masuk ke sini.
           </p>
         </div>
       )}

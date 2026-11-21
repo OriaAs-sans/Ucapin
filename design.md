@@ -46,6 +46,12 @@ Untuk menghindari tampilan generik buatan AI:
 - **Atkinson Hyperlegible Next** (teks UI).
 - **Charis SIL** (hanya transkripsi IPA).
 
+## 4b. Motion (dial MOTION 2)
+- **Momen utama:** setelah penilaian, garis bawah koreksi "digoreskan" kata demi kata (warna dan offset garis, jeda 60 ms per kata), lalu garis penunjuk dan tag catatan turun. Kelas `.mk-reveal`, `.leader-draw`, `.tag-drop`; diputar ulang lewat prop `revealKey` di `ProofreadingSentence`.
+- **Pendukung:** skor naik dari 0 (`ScoreMetricCard`, library `motion`), cincin tombol mic mengikuti level suara (`--mic-level`), giliran chat dan panel hasil masuk dengan `.enter-rise`, batang grafik mingguan tumbuh (`.grow-y`).
+- **Gerak dikurangi:** tanpa perpindahan posisi; perubahan status tetap terlihat lewat opacity dan warna. Tidak ada kurva memantul.
+- **Navigasi mobile:** tab bar bawah 5 menu; tema dan keluar di bar atas.
+
 ## 5. Katalog Reusable Component (`shadcn/ui` + Shared Domain)
 | Layer | Komponen | Lokasi File | Fungsi & Tempat Pakai |
 |---|---|---|---|
@@ -67,6 +73,7 @@ Untuk menghindari tampilan generik buatan AI:
 | `/latihan-ucapan` | `latihan-ucapan.html` | Pronunciation Drill: filter per tujuan belajar (`kerja`, `jalan`, `ielts`, `harian`, `bank`), `ProofreadingSentence`, `MicRecorder`, prompt ulang sebelum recast, 4 `ScoreMetricCard`, panel catatan pelatih |
 | `/roleplay` | `roleplay.html` | Roleplay berskrip (4 skenario sesuai tujuan): chat dengan koreksi inline/akhir, petunjuk ucapan, composer `MicRecorder compact`, panel misi & frasa |
 | `/hasil` | `hasil.html` | Session Result: `ClarityRing`, 4 `ScoreMetricCard`, ulasan jawaban sesi terbaru, CTA Bank Kesalahan, cek percaya diri 1-5 (tersimpan ke DB) |
-| `/bank-kesalahan` | — | Halaman penuh Bank Kesalahan: filter status kata (`work`/`almost`), frekuensi kemunculan, sumber sesi |
+| `/bank-kesalahan` | (belum ada) | Bank Kesalahan berjadwal: tab Ulang hari ini / Terjadwal / Dikuasai / Semua, titik tahap 1 sampai 4, pola yang paling sering muncul dari data pelajar |
+| `/shadowing` | (belum ada) | Dengar contoh (TTS), tantangan sembunyikan teks, rekam tiruan, skor Kejelasan + Kemiripan tempo |
 | `/mulai` | `mulai.html` | Onboarding tujuan, level CEFR A1-C1, target menit harian (memfilter kalimat drill & memilih skenario roleplay aktif di DB Laragon) |
 | `/cek-mikrofon` | `cek-mikrofon.html` | Izin mikrofon setelah penjelasan, live meter 28 bar, pilihan waktu koreksi, opt-in simpan rekaman (UU PDP), menandai `onboardingCompleted=true` |

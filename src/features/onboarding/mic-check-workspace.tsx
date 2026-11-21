@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import type { UserProfileDTO } from "@/types/ucapin";
-import { mapMicError, type MicErrorInfo, cn } from "@/lib/utils";
+import { mapMicError, type MicErrorInfo, cn, isDevBuild } from "@/lib/utils";
 
 const GOAL_NAMES: Record<string, string> = {
   kerja: "Wawancara dan kerja",
@@ -170,7 +170,7 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
           <div className="flex items-center justify-between border-b border-[rgba(212,200,183,0.22)] pb-3">
             <div>
               <p className="text-xs font-bold text-[#D4C8B7]">
-                Profil Tersimpan di Database
+                Profil belajarmu
               </p>
               <p className="font-display text-lg font-bold text-[#F7F5EE]">
                 {user.name}
@@ -303,17 +303,19 @@ export function MicCheckWorkspace({ user }: { user: UserProfileDTO }) {
                     : "Izinkan mikrofon"}
                 </span>
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setPermissionState("granted");
-                  setVerdict("ok");
-                  setStartError(false);
-                }}
-              >
-                Simulasikan mikrofon siap (Mode Testing)
-              </Button>
+              {isDevBuild && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setPermissionState("granted");
+                    setVerdict("ok");
+                    setStartError(false);
+                  }}
+                >
+                  Lewati tes mikrofon (mode pengembangan)
+                </Button>
+              )}
             </div>
           )}
 

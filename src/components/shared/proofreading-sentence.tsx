@@ -15,6 +15,10 @@ export interface ProofreadingSentenceProps {
   translation: string;
   marks?: Record<string, WordMark>;
   showMarks?: boolean;
+  /** Ganti nilainya setiap ada penilaian baru agar goresan koreksi diputar ulang. */
+  revealKey?: string | number;
+  /** Sembunyikan tombol dengar bawaan bila halaman punya pemutar contoh sendiri. */
+  hideAudioControls?: boolean;
   onWordSelect?: (word: string, mark: WordMark) => void;
   className?: string;
 }
@@ -32,6 +36,8 @@ export function ProofreadingSentence({
   translation,
   marks = {},
   showMarks = false,
+  revealKey,
+  hideAudioControls = false,
   onWordSelect,
   className,
 }: ProofreadingSentenceProps) {
@@ -59,7 +65,7 @@ export function ProofreadingSentence({
   );
 
   return (
-    <Card className={cn("p-0 overflow-hidden", className)}>
+    <Card data-sentence-text={sentence} className={cn("p-0 overflow-hidden", className)}>
       {/* Top Notebook Header: Prompt & Reference Toggles */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface-2)]/45 px-6 py-3.5">
         <h2 className="font-ui text-sm font-bold text-[var(--text)]">
@@ -98,6 +104,7 @@ export function ProofreadingSentence({
       {/* Main Ruled Phonetic Canvas */}
       <div className="px-6 py-8 md:px-10 md:py-10">
         <div
+          key={revealKey}
           lang="en"
           className="flex flex-wrap items-baseline justify-center gap-x-3.5 gap-y-6 text-center"
         >
@@ -112,6 +119,7 @@ export function ProofreadingSentence({
               >
                 <button
                   type="button"
+                  style={{ "--i": token.index } as React.CSSProperties}
                   onClick={() => {
                     speakEnglish(token.cleanKey, 0.85);
                     if (token.mark && onWordSelect) {
@@ -121,6 +129,7 @@ export function ProofreadingSentence({
                   title={`Klik untuk dengar kata "${token.cleanKey}"`}
                   className={cn(
                     "font-display text-3xl md:text-[2.35rem] font-bold tracking-tight leading-tight transition-colors rounded-[6px] px-1 hover:bg-[var(--surface-2)]/60",
+                    showMarks && "mk-reveal",
                     showMarks && token.status === "ok" && "mk mk-ok",
                     showMarks && token.status === "almost" && "mk mk-almost text-[var(--almost-text)]",
                     showMarks && token.status === "work" && "mk mk-work text-[var(--work-text)]"
@@ -131,17 +140,20 @@ export function ProofreadingSentence({
 
                 {/* Straight Interlinear Proofreading Marginalia (zero rotation) */}
                 {hasFlag && token.mark && (
-                  <span className="mt-2 inline-flex flex-col items-center">
+                  <span
+                    className="mt-2 inline-flex flex-col items-center"
+                    style={{ "--i": token.index } as React.CSSProperties}
+                  >
                     <i
                       aria-hidden="true"
                       className={cn(
-                        "block h-2.5 w-[1.5px]",
+                        "leader-draw block h-2.5 w-[1.5px]",
                         isWork ? "bg-[var(--work)]" : "bg-[var(--almost)]"
                       )}
                     />
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1 text-xs font-bold leading-none shadow-none",
+                        "tag-drop inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1 text-xs font-bold leading-none shadow-none",
                         isWork
                           ? "border-[var(--work)] bg-[var(--work-wash)] text-[var(--work-text)]"
                           : "border-[var(--almost)] bg-[var(--almost-wash)] text-[var(--almost-text)]"
@@ -213,14 +225,16 @@ export function ProofreadingSentence({
 
       {/* Bottom Footer: Audio Playback Toolbar & Proofreading Mark Key */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--line)] bg-[var(--bg)]/55 px-6 py-3.5">
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-label="Pemutar suara contoh"
-        >
-          <AudioTtsButton text={sentence} rate={1} label="Dengar contoh" />
-          <AudioTtsButton text={sentence} rate={0.7} label="Pelan 0,7x" />
-        </div>
+        {!hideAudioControls && (
+          <div
+            className="flex flex-wrap items-center gap-2"
+            role="group"
+            aria-label="Pemutar suara contoh"
+          >
+            <AudioTtsButton text={sentence} rate={1} label="Dengar contoh" />
+            <AudioTtsButton text={sentence} rate={0.7} label="Pelan 0,7x" />
+          </div>
+        )}
 
         <div
           className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-2)]"
