@@ -19,6 +19,7 @@
     "test": "tsx --test \"src/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "db:seed:content": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed-content.ts",
+    "db:seed:production": "powershell -ExecutionPolicy Bypass -File prisma/seed-production.ps1",
     "postinstall": "prisma generate",
     "vercel-build": "prisma migrate deploy && next build"
   },
