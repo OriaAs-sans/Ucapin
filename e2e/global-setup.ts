@@ -6,13 +6,14 @@ const SAMPLE_RATE = 16000;
 const MS_PER_WORD = 420;
 const FIXTURE_SOURCE = "nada-lokal-v1";
 
-// Audio mikrofon palsu untuk kalimat pertama bab Kerja A2. Server E2E memakai pengenal suara
-// tiruan (SPEECH_MOCK), jadi isi audio tidak ditranskrip: cukup berbunyi dan cukup panjang
-// agar lolos meter level dan batas ukuran. Dibuat lokal, tanpa TTS, sehingga tanpa kuota.
+// Audio mikrofon palsu untuk kalimat pertama bab Kerja A1 (bab pertama jalur Kerja).
+// Server E2E memakai pengenal suara tiruan (SPEECH_MOCK), jadi isi audio tidak ditranskrip:
+// cukup berbunyi dan cukup panjang agar lolos meter level dan batas ukuran. Dibuat lokal,
+// tanpa TTS, sehingga tanpa kuota.
 export default async function globalSetup() {
   const prisma = new PrismaClient();
   const first = await prisma.drillSentence.findFirst({
-    where: { goalTag: "kerja", cefrLevel: "A2" },
+    where: { goalTag: "kerja", cefrLevel: "A1" },
     orderBy: { orderIndex: "asc" },
     select: { text: true },
   });

@@ -51,11 +51,12 @@ export class AuthError extends Error {
   }
 }
 
+// Bab roleplay pertama tiap jalur (level terendah), agar skenario awal selalu terbuka.
 const GOAL_TO_SCENARIO: Record<string, string> = {
-  kerja: "wawancara-startup",
-  jalan: "checkin-hotel-singapura",
-  ielts: "simulasi-ielts-part1",
-  harian: "memesan-di-kafe",
+  kerja: "hari-pertama-kerja",
+  jalan: "beli-tiket-kereta",
+  ielts: "ielts-part1-rumah-hobi",
+  harian: "belanja-di-minimarket",
 };
 
 const EMPTY_STATS = { spokenTodayMinutes: 0, totalSpokenMinutes: 0, streakDays: 0 };
@@ -298,8 +299,20 @@ export async function getDashboardData() {
     }),
   ]);
 
+  // Kartu "lanjutkan roleplay" tidak boleh menunjuk bab yang masih terkunci: bila skenario
+  // tersimpan terkunci, pakai bab roleplay pertama yang terbuka di jalur tujuan utama.
+  const roleplayPaths = await buildRoleplayPaths(user);
+  const savedChapter = chapterStatusFor(roleplayPaths, roleplayChapterKey(targetSlug));
+  const primaryPath =
+    roleplayPaths.find((p) => p.goalTag === primaryGoal) ?? roleplayPaths[0];
+  const openSlug =
+    savedChapter && savedChapter.status !== "locked"
+      ? targetSlug
+      : primaryPath?.chapters
+          .find((c) => c.status === "open")
+          ?.key.replace(/^roleplay:/, "");
   const resolvedScenario =
-    allScenarios.find((s) => s.slug === targetSlug) ??
+    allScenarios.find((s) => s.slug === (openSlug ?? targetSlug)) ??
     allScenarios.find((s) => user.goals.includes(s.goalTag)) ??
     allScenarios[0] ??
     null;

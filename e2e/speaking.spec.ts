@@ -48,7 +48,7 @@ async function recordOnce(page: Page) {
 // salah ucap khas Indonesia, jadi hasil penilaian bisa dipastikan tanpa memanggil ElevenLabs.
 test("rekam ucapan lalu satu salah ucap khas Indonesia ditandai", async ({ page }) => {
   await loginActive(page);
-  await page.goto("/latihan-ucapan?bab=kerja-A2");
+  await page.goto("/latihan-ucapan?bab=kerja-A1");
   await expect(page.locator("[data-sentence-text]").first()).toHaveAttribute(
     "data-sentence-text",
     meta.reference
@@ -61,15 +61,30 @@ test("rekam ucapan lalu satu salah ucap khas Indonesia ditandai", async ({ page 
 
 test("bab terkunci tidak bisa dibuka lewat URL", async ({ page }) => {
   await loginActive(page);
-  await page.goto("/latihan-ucapan?bab=kerja-B1");
+  await page.goto("/latihan-ucapan?bab=kerja-A2");
   await expect(page).toHaveURL(/terkunci=1/);
   await expect(page.getByText("Bab itu masih terkunci.", { exact: false })).toBeVisible();
+});
+
+test("setiap jalur punya 5 bab, dan kartu roleplay di Beranda membuka bab yang terbuka", async ({
+  page,
+}) => {
+  await loginActive(page);
+  await page.goto("/latihan-ucapan");
+  await expect(page.getByText(/dari 5 bab selesai/)).toHaveCount(4);
+  await page.goto("/roleplay");
+  await expect(page.getByText(/dari 5 bab selesai/)).toHaveCount(4);
+
+  await page.goto("/");
+  await page.getByRole("link", { name: /(Mulai|Ulangi) roleplay ini/ }).click();
+  await expect(page).toHaveURL(/\/roleplay\?slug=/);
+  await expect(page).not.toHaveURL(/terkunci=1/);
 });
 
 test("menyelesaikan satu bab membuka bab berikutnya", async ({ page }) => {
   test.setTimeout(180_000);
   await loginActive(page);
-  await page.goto("/latihan-ucapan?bab=kerja-A2");
+  await page.goto("/latihan-ucapan?bab=kerja-A1");
 
   for (let i = 0; i < 5; i++) {
     await recordOnce(page);
@@ -82,6 +97,6 @@ test("menyelesaikan satu bab membuka bab berikutnya", async ({ page }) => {
 
   await page.goto("/latihan-ucapan");
   const kerja = page.locator("section", { has: page.getByRole("heading", { name: "Wawancara & Kerja" }) });
-  await expect(kerja.getByText("1 dari 3 bab selesai")).toBeVisible();
+  await expect(kerja.getByText("1 dari 5 bab selesai")).toBeVisible();
   await expect(kerja.getByRole("link", { name: /Bab 2/ })).toBeVisible();
 });

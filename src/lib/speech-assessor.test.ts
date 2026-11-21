@@ -61,6 +61,12 @@ describe("assessSpokenUtterance: pola salah ucap khas Indonesia", () => {
     { ref: "please leave now", heard: "please leaf now", word: "leave", note: /\/v\/ akhir jadi \/f\//, phoneme: "/v/" },
     { ref: "the fresh bread", heard: "the fres bread", word: "fresh", note: /\/ʃ\//, phoneme: "/ʃ/" },
     { ref: "I worked late", heard: "I work late", word: "worked", note: /\/t\/ akhir hilang/, phoneme: "/t/ atau /d/ akhir" },
+    // Kata dari materi A1/C1 yang "dibetulkan" pengenal suara menjadi kata Inggris lain.
+    { ref: "We cleaned the van", heard: "We cleaned the fan", word: "van", note: /\/v\/ jadi \/f\//, phoneme: "/v/" },
+    { ref: "I believe it", heard: "I belief it", word: "believe", note: /\/v\/ akhir jadi \/f\//, phoneme: "/v/" },
+    { ref: "I thought so", heard: "I taught so", word: "thought", note: /\/θ\/ jadi \/t\//, phoneme: "/θ/" },
+    { ref: "my brother is here", heard: "my brader is here", word: "brother", note: /\/ð\/ jadi \/d\//, phoneme: "/ð/" },
+    { ref: "she is here", heard: "see is here", word: "she", note: /\/ʃ\/ jadi \/s\//, phoneme: "/ʃ/" },
     { ref: "we visited Bali", heard: "we visit Bali", word: "visited", note: /-ed hilang/, phoneme: "/t/ atau /d/ akhir" },
   ];
 

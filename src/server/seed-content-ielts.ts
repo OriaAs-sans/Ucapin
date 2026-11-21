@@ -1,0 +1,466 @@
+// Materi tambahan tujuan "ielts" (IELTS & Kuliah): 10 kalimat latihan dan 3 skenario roleplay.
+// Semua skenario adalah simulasi latihan, bukan penilaian band IELTS resmi.
+import type { DrillSeed, ScenarioSeed } from "./seed-shared";
+import { PAIRS_DH2, PAIRS_SH1, PAIRS_TH1, PAIRS_TH4, PAIRS_V1, PAIRS_V3, PAIRS_V4, STEPS_DH, STEPS_FINAL, STEPS_SH, STEPS_TH, STEPS_V, m } from "./seed-shared";
+
+export const IELTS_EXTRA_DRILLS: DrillSeed[] = [
+  // A1
+  {
+    cefr: "A1",
+    category: "IELTS Speaking Part 1",
+    focus: "/v/ dan -s akhir",
+    text: "I have a small room in my house.",
+    ipa: "/aɪ hæv ə smɔl rum ɪn maɪ haʊs/",
+    tr: "Saya punya kamar kecil di rumah saya.",
+    marks: [
+      m("have", "work", "/v/ jadi /f/", "/hæv/"),
+      m("house", "almost", "-s akhir hilang", "/haʊs/"),
+    ],
+    coach: ["have", "/hæv/", "Di akhir “have”, /v/ sering menjadi /f/ sehingga terdengar “half”. Getarkan bibir bawah sampai kata selesai."],
+    steps: STEPS_V,
+    pairs: PAIRS_V4,
+  },
+  {
+    cefr: "A1",
+    category: "IELTS Speaking Part 1",
+    focus: "/v/ dan -d akhir",
+    text: "My hometown is very quiet and clean.",
+    ipa: "/maɪ ˈhoʊmˌtaʊn ɪz ˈvɛri ˈkwaɪət ænd klin/",
+    tr: "Kota asal saya sangat tenang dan bersih.",
+    marks: [
+      m("very", "work", "/v/ jadi /f/", "/ˈvɛri/"),
+      m("and", "almost", "/d/ akhir hilang", "/ænd/"),
+    ],
+    coach: ["very", "/ˈvɛri/", "Kata “very” sering terdengar “ferry” (kapal feri). Tempelkan gigi atas ke bibir bawah dan nyalakan suara."],
+    steps: STEPS_V,
+    pairs: PAIRS_V1,
+  },
+  {
+    cefr: "A1",
+    category: "IELTS Speaking Part 1",
+    focus: "/θ/ dan /ð/",
+    text: "I think my brother likes this game.",
+    ipa: "/aɪ θɪŋk maɪ ˈbrʌðər laɪks ðɪs ɡeɪm/",
+    tr: "Saya rasa kakak laki-laki saya suka permainan ini.",
+    marks: [
+      m("think", "work", "/θ/ jadi /t/", "/θɪŋk/"),
+      m("brother", "almost", "/ð/ jadi /d/", "/ˈbrʌðər/"),
+      m("this", "almost", "/ð/ jadi /d/", "/ðɪs/"),
+    ],
+    coach: ["think", "/θɪŋk/", "Kalau “think” terdengar “tink”, kata itu berubah jadi bunyi lain. Taruh ujung lidah tipis di antara gigi."],
+    steps: STEPS_TH,
+    pairs: PAIRS_TH1,
+  },
+  {
+    cefr: "A1",
+    category: "IELTS Speaking Part 1",
+    focus: "/ʃ/",
+    text: "I should finish my homework tonight.",
+    ipa: "/aɪ ʃʊd ˈfɪnɪʃ maɪ ˈhoʊmˌwɜrk təˈnaɪt/",
+    tr: "Malam ini saya harus menyelesaikan pekerjaan rumah saya.",
+    marks: [
+      m("should", "work", "/ʃ/ jadi /s/", "/ʃʊd/"),
+      m("finish", "work", "/ʃ/ akhir jadi /s/", "/ˈfɪnɪʃ/"),
+    ],
+    coach: ["should", "/ʃʊd/", "Kalau /ʃ/ menjadi /s/, “should” terdengar seperti “sud”. Bulatkan bibir dan desiskan sebelum /ʊd/."],
+    steps: STEPS_SH,
+    pairs: PAIRS_SH1,
+  },
+  {
+    cefr: "A1",
+    category: "IELTS Speaking Part 1",
+    focus: "-ed akhir dan /ð/",
+    text: "I walked to class and talked with Dave.",
+    ipa: "/aɪ wɔkt tu klæs ænd tɔkt wɪð deɪv/",
+    tr: "Saya berjalan ke kelas dan mengobrol dengan Dave.",
+    marks: [
+      m("walked", "work", "-ed akhir hilang", "/wɔkt/"),
+      m("talked", "work", "-ed akhir hilang", "/tɔkt/"),
+      m("with", "almost", "/ð/ akhir jadi /d/ atau /t/", "/wɪð/"),
+    ],
+    coach: ["walked", "/wɔkt/", "Di “walked”, akhiran -ed dibaca /t/. Kalau hilang, terdengar “walk” dan waktu kejadiannya tidak jelas."],
+    steps: STEPS_FINAL,
+    pairs: ["walk", "walked", "talk", "talked", "look", "looked"],
+  },
+  // C1
+  {
+    cefr: "C1",
+    category: "IELTS Speaking Part 3",
+    focus: "/ð/ dan /v/",
+    text: "Although technology offers valuable resources, it cannot replace the guidance that teachers provide in the classroom.",
+    ipa: "/ɔlˈðoʊ tɛkˈnɑlədʒi ˈɔfərz ˈvæljuəbəl ˈriˌsɔrsɪz ɪt ˈkænɑt rɪˈpleɪs ðə ˈɡaɪdəns ðæt ˈtitʃərz prəˈvaɪd ɪn ðə ˈklæsˌrum/",
+    tr: "Meskipun teknologi menawarkan sumber daya yang berharga, teknologi tidak bisa menggantikan bimbingan yang diberikan guru di kelas.",
+    marks: [
+      m("Although", "work", "/ð/ tengah jadi /d/", "/ɔlˈðoʊ/"),
+      m("valuable", "work", "/v/ jadi /f/", "/ˈvæljuəbəl/"),
+      m("provide", "almost", "/v/ akhir jadi /f/", "/prəˈvaɪd/"),
+    ],
+    coach: ["Although", "/ɔlˈðoʊ/", "Di “Although”, /ð/ ada di tengah kata. Kalau menjadi /d/, kata pembuka argumenmu terdengar seperti “aldo”."],
+    steps: STEPS_DH,
+    pairs: PAIRS_DH2,
+  },
+  {
+    cefr: "C1",
+    category: "IELTS Speaking Part 3",
+    focus: "/ʃ/, /ð/, dan /v/",
+    text: "Governments should therefore invest in public transport, because reducing private vehicles is the most effective way to cut pollution.",
+    ipa: "/ˈɡʌvərnmənts ʃʊd ˈðɛrˌfɔr ɪnˈvɛst ɪn ˈpʌblɪk ˈtrænspɔrt bɪˈkɔz rɪˈdusɪŋ ˈpraɪvɪt ˈviɪkəlz ɪz ðə moʊst ɪˈfɛktɪv weɪ tu kʌt pəˈluʃən/",
+    tr: "Karena itu, pemerintah sebaiknya berinvestasi pada transportasi umum, sebab mengurangi kendaraan pribadi adalah cara paling efektif untuk menekan polusi.",
+    marks: [
+      m("should", "work", "/ʃ/ jadi /s/", "/ʃʊd/"),
+      m("therefore", "almost", "/ð/ jadi /d/", "/ˈðɛrˌfɔr/"),
+      m("vehicles", "work", "/v/ jadi /f/", "/ˈviɪkəlz/"),
+    ],
+    coach: ["should", "/ʃʊd/", "Kata “should” muncul di hampir setiap opini Part 3. Kalau /ʃ/ menjadi /s/, terdengar “sud” dan kalimatmu kehilangan kepastian."],
+    steps: STEPS_SH,
+    pairs: ["should", "sud", "shore", "sore", "sheet", "seat"],
+  },
+  {
+    cefr: "C1",
+    category: "IELTS Speaking Part 3",
+    focus: "/θ/, -ed, dan -ts akhir",
+    text: "Over the past three decades, education has changed dramatically, and students now depend on online platforms for research.",
+    ipa: "/ˈoʊvər ðə pæst θri ˈdɛkeɪdz ˌɛdʒəˈkeɪʃən hæz tʃeɪndʒd drəˈmætɪkli ænd ˈstudənts naʊ dɪˈpɛnd ɑn ˈɑnˌlaɪn ˈplætˌfɔrmz fɔr ˈrisɜrtʃ/",
+    tr: "Selama tiga dekade terakhir, pendidikan berubah drastis, dan kini pelajar bergantung pada platform daring untuk riset.",
+    marks: [
+      m("three", "work", "/θ/ awal jadi /t/", "/θri/"),
+      m("changed", "work", "-ed akhir hilang", "/tʃeɪndʒd/"),
+      m("students", "almost", "-ts akhir hilang", "/ˈstudənts/"),
+    ],
+    coach: ["three", "/θri/", "Kalau “three” terdengar “tree” (pohon), angka dan waktu yang kamu sebut jadi salah. Julurkan ujung lidah tipis dulu sebelum /r/."],
+    steps: STEPS_TH,
+    pairs: PAIRS_TH4,
+  },
+  {
+    cefr: "C1",
+    category: "IELTS Speaking Part 3",
+    focus: "/v/ dan /θ/",
+    text: "Many people believe that individual choices matter, but I think strict laws are the only way to protect the environment.",
+    ipa: "/ˈmɛni ˈpipəl bɪˈliv ðæt ˌɪndəˈvɪdʒuəl ˈtʃɔɪsɪz ˈmætər bʌt aɪ θɪŋk strɪkt lɔz ɑr ðə ˈoʊnli weɪ tu prəˈtɛkt ði ɪnˈvaɪrənmənt/",
+    tr: "Banyak orang percaya bahwa pilihan individu itu penting, tetapi menurut saya hukum yang tegas adalah satu-satunya cara melindungi lingkungan.",
+    marks: [
+      m("believe", "work", "/v/ akhir jadi /f/", "/bɪˈliv/"),
+      m("think", "work", "/θ/ jadi /t/", "/θɪŋk/"),
+      m("environment", "almost", "/v/ tengah jadi /f/", "/ɪnˈvaɪrənmənt/"),
+    ],
+    coach: ["believe", "/bɪˈliv/", "Di akhir “believe”, /v/ yang menjadi /f/ terdengar seperti “belief” (keyakinan). Getarkan bibir bawah sampai kata selesai."],
+    steps: STEPS_V,
+    pairs: PAIRS_V3,
+  },
+  {
+    cefr: "C1",
+    category: "IELTS Speaking Part 3",
+    focus: "/ð/, /θ/, dan -ts akhir",
+    text: "The main thing is that schools should teach critical thinking, rather than ask students to memorize facts.",
+    ipa: "/ðə meɪn θɪŋ ɪz ðæt skulz ʃʊd titʃ ˈkrɪtɪkəl ˈθɪŋkɪŋ ˈræðər ðæn æsk ˈstudənts tu ˈmɛməˌraɪz fækts/",
+    tr: "Hal utamanya adalah sekolah sebaiknya mengajarkan berpikir kritis, bukan menyuruh murid menghafal fakta.",
+    marks: [
+      m("rather", "work", "/ð/ tengah jadi /d/", "/ˈræðər/"),
+      m("thinking", "work", "/θ/ awal jadi /t/", "/ˈθɪŋkɪŋ/"),
+      m("facts", "almost", "-ts akhir hilang", "/fækts/"),
+    ],
+    coach: ["rather", "/ˈræðər/", "Di tengah “rather” ada /ð/ yang bergetar. Kalau menjadi /d/, terdengar “rader” dan kontras argumenmu kurang jelas."],
+    steps: STEPS_DH,
+    pairs: PAIRS_DH2,
+  },
+];
+
+export const IELTS_EXTRA_SCENARIOS: ScenarioSeed[] = [
+  {
+    slug: "ielts-part1-rumah-hobi",
+    goalTag: "ielts",
+    title: "IELTS Part 1: rumah dan hobi",
+    category: "IELTS & Akademik",
+    cefrLevel: "A2 · Dasar",
+    characterName: "Hannah",
+    characterRole: "Penguji latihan IELTS",
+    characterTrait: "Ramah · tenang · tempo pelan",
+    description:
+      "Kamu menjawab pertanyaan gaya IELTS Speaking Part 1 tentang tempat tinggal, kota asal, dan hobi. Ini simulasi latihan, bukan penilaian band resmi.",
+    missions: [
+      "Ceritakan tempat tinggalmu",
+      "Ceritakan kota asalmu",
+      "Ceritakan hobi dan kegiatanmu",
+    ],
+    phrases: [
+      { phrase: "I would say that...", meaning: "Saya akan bilang bahwa..." },
+      { phrase: "It is famous for...", meaning: "Tempat itu terkenal karena..." },
+      { phrase: "In my free time, I...", meaning: "Di waktu luang, saya..." },
+    ],
+    nodes: [
+      {
+        line: "Hello, I am Hannah. Let's begin with some simple questions. Can you tell me where you live?",
+        tr: "Halo, saya Hannah. Mari mulai dengan beberapa pertanyaan sederhana. Bisa ceritakan di mana Anda tinggal?",
+        hints: [
+          "I live in Surabaya with my family.",
+          "I live in a small house near the campus.",
+        ],
+        fix: {
+          word: "live",
+          ipa: "/lɪv/",
+          phoneme: "/v/",
+          errorPattern: "v → f",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata live saja, dan getarkan bibir bawah di akhir.",
+          detailText: "Kalau /v/ menjadi /f/, live terdengar seperti life. Kata live sudah dicatat ke Bank Kesalahan untuk diulang.",
+        },
+      },
+      {
+        line: "Do you like living there? Why or why not?",
+        tr: "Apakah Anda suka tinggal di sana? Mengapa atau mengapa tidak?",
+        hints: [
+          "Yes, I like it because my neighbors are very friendly.",
+          "Yes, it is quiet and the food is very cheap.",
+        ],
+      },
+      {
+        line: "Now let's talk about your hometown. Where is it?",
+        tr: "Sekarang mari bicara tentang kota asal Anda. Di mana letaknya?",
+        hints: [
+          "My hometown is a small city in Central Java.",
+          "It is in East Java, about two hours from Surabaya.",
+        ],
+      },
+      {
+        line: "What is your hometown famous for?",
+        tr: "Kota asal Anda terkenal karena apa?",
+        hints: [
+          "My hometown is famous for its fresh seafood.",
+          "It is famous for batik and a big old market.",
+        ],
+        fix: {
+          word: "fresh",
+          ipa: "/frɛʃ/",
+          phoneme: "/ʃ/",
+          errorPattern: "sh → s",
+          status: "almost",
+          promptText: "Hampir! Bulatkan bibir dan desiskan /ʃ/ di akhir kata fresh.",
+          detailText: "Kalau /ʃ/ menjadi /s/, fresh terdengar seperti fress. Kata fresh sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+      {
+        line: "Let's talk about hobbies. What do you like to do in your free time?",
+        tr: "Mari bicara tentang hobi. Apa yang suka Anda lakukan di waktu luang?",
+        hints: [
+          "I usually play badminton with my friends.",
+          "I like to watch movies and listen to music.",
+        ],
+      },
+      {
+        line: "How often do you do that, and who do you do it with?",
+        tr: "Seberapa sering Anda melakukannya, dan dengan siapa?",
+        hints: [
+          "I play twice a week with three classmates.",
+          "I do it every Sunday with my brother and cousins.",
+        ],
+        fix: {
+          word: "three",
+          ipa: "/θri/",
+          phoneme: "/θ/",
+          errorPattern: "th → t",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata three saja, dengan ujung lidah tipis di antara gigi.",
+          detailText: "Kalau /θ/ menjadi /t/, three terdengar seperti tree. Kata three sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+    ],
+  },
+  {
+    slug: "ielts-part3-teknologi",
+    goalTag: "ielts",
+    title: "IELTS Part 3: teknologi dan pendidikan",
+    category: "IELTS & Akademik",
+    cefrLevel: "B2 · Mahir",
+    characterName: "Marcus",
+    characterRole: "Penguji latihan IELTS",
+    characterTrait: "Formal · tenang · menanyakan alasan",
+    description:
+      "Kamu berdiskusi gaya IELTS Speaking Part 3 tentang teknologi dan pendidikan, dengan jawaban yang memuat opini dan alasan. Ini simulasi latihan, bukan penilaian band resmi.",
+    missions: [
+      "Jelaskan dampak teknologi pada cara belajar",
+      "Beri pendapat tentang ponsel dan teknologi di sekolah",
+      "Prediksi masa depan pendidikan",
+    ],
+    phrases: [
+      { phrase: "To a certain extent...", meaning: "Sampai batas tertentu..." },
+      { phrase: "It depends on...", meaning: "Itu tergantung pada..." },
+      { phrase: "One disadvantage is that...", meaning: "Satu kekurangannya adalah..." },
+    ],
+    nodes: [
+      {
+        line: "Let's discuss technology and education. How has technology changed the way students learn nowadays?",
+        tr: "Mari bahas teknologi dan pendidikan. Bagaimana teknologi mengubah cara pelajar belajar saat ini?",
+        hints: [
+          "Students can now access valuable information online, which makes learning much faster.",
+          "Technology has made learning more flexible, because students can study anywhere at any time.",
+        ],
+        fix: {
+          word: "valuable",
+          ipa: "/ˈvæljuəbəl/",
+          phoneme: "/v/",
+          errorPattern: "v → f",
+          status: "almost",
+          promptText: "Hampir! Getarkan bibir bawah pada bunyi /v/ di awal kata valuable.",
+          detailText: "Kata valuable sudah dicatat ke Bank Kesalahan untuk diulang.",
+        },
+      },
+      {
+        line: "Do you think online learning is as effective as studying in a classroom? Why?",
+        tr: "Menurut Anda, apakah belajar daring seefektif belajar di kelas? Mengapa?",
+        hints: [
+          "I think classroom learning is more effective, because students can ask questions directly.",
+          "It depends, because online courses are convenient, but some students lose motivation without a teacher.",
+        ],
+      },
+      {
+        line: "Some people say that children should not use smartphones at school. To what extent do you agree?",
+        tr: "Sebagian orang berkata anak-anak tidak boleh memakai ponsel di sekolah. Sejauh mana Anda setuju?",
+        hints: [
+          "I partly agree, because phones distract students, but they can also be useful for research.",
+          "I strongly agree, because students should concentrate on their lessons rather than on social media.",
+        ],
+        fix: {
+          word: "rather",
+          ipa: "/ˈræðər/",
+          phoneme: "/ð/",
+          errorPattern: "th → d",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata rather saja, dengan lidah di antara gigi dan suara menyala.",
+          detailText: "Kalau /ð/ menjadi /d/, rather terdengar seperti rader. Kata rather sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+      {
+        line: "What are the main disadvantages of depending too much on technology for study?",
+        tr: "Apa kekurangan utama bergantung terlalu banyak pada teknologi untuk belajar?",
+        hints: [
+          "One disadvantage is that students may copy answers instead of thinking for themselves.",
+          "Another problem is that they might lose basic skills, such as writing by hand.",
+        ],
+        fix: {
+          word: "thinking",
+          ipa: "/ˈθɪŋkɪŋ/",
+          phoneme: "/θ/",
+          errorPattern: "th → t",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata thinking saja, mulai dengan ujung lidah di antara gigi.",
+          detailText: "Kalau /θ/ menjadi /t/, thinking terdengar seperti tinking. Kata thinking sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+      {
+        line: "How do you think universities will change over the next twenty years?",
+        tr: "Menurut Anda, bagaimana universitas akan berubah dalam dua puluh tahun ke depan?",
+        hints: [
+          "I believe most lectures will be online, and universities will focus on group projects.",
+          "Universities will probably offer more flexible degrees, so people can study while they work.",
+        ],
+      },
+      {
+        line: "Finally, should schools teach students how to use artificial intelligence responsibly?",
+        tr: "Terakhir, apakah sekolah perlu mengajarkan pelajar cara memakai kecerdasan buatan dengan bertanggung jawab?",
+        hints: [
+          "Definitely, because students will use it anyway, so they need to learn the risks and benefits.",
+          "Yes, schools should teach it, so that students can use it ethically and check the facts.",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "ielts-part3-lingkungan",
+    goalTag: "ielts",
+    title: "IELTS Part 3: lingkungan dan kebijakan",
+    category: "IELTS & Akademik",
+    cefrLevel: "C1 · Lanjut",
+    characterName: "Elena",
+    characterRole: "Penguji latihan IELTS",
+    characterTrait: "Analitis · sabar · menuntut alasan",
+    description:
+      "Kamu berdiskusi gaya IELTS Speaking Part 3 tentang lingkungan dan kebijakan pemerintah, dengan argumen yang runtut. Ini simulasi latihan, bukan penilaian band resmi.",
+    missions: [
+      "Jelaskan masalah lingkungan di negaramu",
+      "Nilai peran pemerintah dan kebijakan",
+      "Bahas tanggung jawab individu dan masa depan",
+    ],
+    phrases: [
+      { phrase: "I would argue that...", meaning: "Saya berpendapat bahwa..." },
+      { phrase: "Having said that,...", meaning: "Meskipun begitu,..." },
+      { phrase: "That is largely because...", meaning: "Hal itu sebagian besar karena..." },
+    ],
+    nodes: [
+      {
+        line: "Let's talk about the environment. What do you consider to be the most serious environmental problem in your country?",
+        tr: "Mari bicara tentang lingkungan. Menurut Anda, apa masalah lingkungan paling serius di negara Anda?",
+        hints: [
+          "I would say air pollution is the most serious problem, particularly in large cities where traffic is extremely heavy.",
+          "In my view, plastic waste is the biggest issue, because rivers and beaches are badly polluted by household rubbish.",
+        ],
+        fix: {
+          word: "pollution",
+          ipa: "/pəˈluʃən/",
+          phoneme: "/ʃ/",
+          errorPattern: "sh → s",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata pollution saja, dan desiskan /ʃ/ sebelum /ən/.",
+          detailText: "Kalau /ʃ/ menjadi /s/, pollution terdengar datar seperti polusion. Kata pollution sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+      {
+        line: "What causes this problem, and who is mainly responsible for it?",
+        tr: "Apa penyebab masalah ini, dan siapa yang terutama bertanggung jawab?",
+        hints: [
+          "Mainly industries that release harmful chemicals, although ordinary people also contribute by using private vehicles every day.",
+          "Honestly, I think both companies and consumers are responsible, because demand for cheap products encourages careless production.",
+        ],
+      },
+      {
+        line: "Some people argue that governments should ban single-use plastics. How far do you agree?",
+        tr: "Sebagian orang berpendapat pemerintah harus melarang plastik sekali pakai. Sejauh mana Anda setuju?",
+        hints: [
+          "I largely agree, since voluntary measures have clearly failed, and a ban would force companies to develop alternatives.",
+          "I think a complete ban is unrealistic, but heavy taxes on plastic products would change consumer behavior effectively.",
+        ],
+      },
+      {
+        line: "Would such policies be accepted easily, or would they face public resistance?",
+        tr: "Apakah kebijakan seperti itu akan mudah diterima, atau akan menghadapi penolakan publik?",
+        hints: [
+          "Initially there would be resistance, particularly among small businesses, but people usually adapt once the benefits become visible.",
+          "They would probably be accepted if the government explained the reasons clearly and provided affordable alternatives.",
+        ],
+        fix: {
+          word: "provided",
+          ipa: "/prəˈvaɪdɪd/",
+          phoneme: "/v/",
+          errorPattern: "v → f",
+          status: "almost",
+          promptText: "Hampir! Getarkan bibir bawah pada bunyi /v/ di tengah kata provided.",
+          detailText: "Kata provided sudah dicatat ke Bank Kesalahan untuk diulang.",
+        },
+      },
+      {
+        line: "Do you think individuals can make a real difference, or is change only possible at government level?",
+        tr: "Menurut Anda, apakah individu bisa membawa perbedaan nyata, atau perubahan hanya mungkin di tingkat pemerintah?",
+        hints: [
+          "Individuals matter, but without strong legislation their efforts remain limited, so we need both approaches together.",
+          "I think change starts with individuals, although only governments can build the infrastructure that makes sustainable choices easy.",
+        ],
+        fix: {
+          word: "together",
+          ipa: "/təˈɡɛðər/",
+          phoneme: "/ð/",
+          errorPattern: "th → d",
+          status: "work",
+          promptText: "Coba ucapkan lagi kata together saja, dengan lidah di antara gigi dan suara menyala.",
+          detailText: "Kalau /ð/ menjadi /d/, together terdengar seperti todeder. Kata together sudah dicatat ke Bank Kesalahan.",
+        },
+      },
+      {
+        line: "Finally, how optimistic are you about the future of the environment?",
+        tr: "Terakhir, seberapa optimis Anda tentang masa depan lingkungan?",
+        hints: [
+          "I am cautiously optimistic, because renewable energy is becoming cheaper, but progress depends on political determination.",
+          "Frankly, I am worried, since progress is slow, yet young people are increasingly demanding stronger action from leaders.",
+        ],
+      },
+    ],
+  },
+];

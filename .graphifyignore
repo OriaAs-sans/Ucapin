@@ -1,0 +1,4 @@
+# graphify membaca .gitignore lalu file ini. Riset dan laporan tidak di-push (lihat .gitignore),
+# tetapi tetap masuk knowledge graph lokal agar bisa di-query.
+!reports/
+!research_notes/

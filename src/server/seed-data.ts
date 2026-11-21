@@ -1,74 +1,40 @@
 import type { PrismaClient } from "@prisma/client";
 import { hashPassword } from "./password";
 import { readTestAccountCredentials, TEST_ACCOUNT_IDS } from "./test-accounts";
-
+import { HARIAN_EXTRA_DRILLS, HARIAN_EXTRA_SCENARIOS } from "./seed-content-harian";
+import { IELTS_EXTRA_DRILLS, IELTS_EXTRA_SCENARIOS } from "./seed-content-ielts";
+import { JALAN_EXTRA_DRILLS, JALAN_EXTRA_SCENARIOS } from "./seed-content-jalan";
+import { KERJA_EXTRA_DRILLS, KERJA_EXTRA_SCENARIOS } from "./seed-content-kerja";
+import {
+  type DrillSeed,
+  PAIRS_DH1,
+  PAIRS_DH2,
+  PAIRS_SH1,
+  PAIRS_SH2,
+  PAIRS_SH3,
+  PAIRS_TH1,
+  PAIRS_TH2,
+  PAIRS_TH3,
+  PAIRS_TH4,
+  PAIRS_V1,
+  PAIRS_V2,
+  PAIRS_V3,
+  PAIRS_V4,
+  STEPS_DH,
+  STEPS_FINAL,
+  STEPS_PLURAL,
+  STEPS_SH,
+  STEPS_TH,
+  STEPS_V,
+  type ScenarioSeed,
+  m,
+} from "./seed-shared";
 
 // ---------------------------------------------------------------------------
-// Konten belajar: kalimat drill (4 tujuan x 3 level CEFR x 5 kalimat)
+// Konten belajar: kalimat drill (4 tujuan x 5 level CEFR A1 sampai C1 x 5 kalimat).
+// Level A2, B1, B2 ada di file ini; A1 dan C1 di seed-content-<tujuan>.ts.
 // ---------------------------------------------------------------------------
 
-type MarkStatus = "work" | "almost";
-type Mark = [word: string, status: MarkStatus, note: string, ipa: string];
-
-type DrillSeed = {
-  cefr: "A2" | "B1" | "B2";
-  category: string;
-  focus: string;
-  text: string;
-  ipa: string;
-  tr: string;
-  marks: Mark[];
-  coach: [word: string, ipa: string, note: string];
-  steps: string[];
-  pairs: string[];
-};
-
-const STEPS_V = [
-  "Tempelkan gigi atas ke bibir bawah, jangan sampai kedua bibir menutup.",
-  "Nyalakan suara sambil menghembuskan udara sampai bibir bawah terasa bergetar.",
-  "Kalau tidak bergetar, bunyinya masih /f/. Ulangi pelan lalu percepat.",
-];
-const STEPS_TH = [
-  "Letakkan ujung lidah tipis di antara gigi atas dan gigi bawah.",
-  "Tiupkan udara tanpa suara lewat celah itu, jangan menekan lidah seperti saat mengucapkan /t/.",
-  "Tarik lidah ke dalam lalu lanjutkan ke bunyi berikutnya.",
-];
-const STEPS_DH = [
-  "Letakkan ujung lidah di antara gigi seperti pada bunyi /θ/.",
-  "Kali ini nyalakan suara sehingga ujung lidah terasa bergetar.",
-  "Jangan menekan lidah ke gusi atas, karena itu menjadi bunyi /d/.",
-];
-const STEPS_SH = [
-  "Majukan bibir sedikit dan bulatkan, seperti saat berkata “sstt”.",
-  "Tarik lidah sedikit ke belakang dan jangan menyentuh gigi.",
-  "Desiskan udara agak panjang sebelum masuk ke bunyi berikutnya.",
-];
-const STEPS_FINAL = [
-  "Ucapkan kata dasarnya sampai selesai dengan jelas.",
-  "Tambahkan bunyi penutup dengan satu sentuhan lidah ke gusi atas, tanpa vokal tambahan.",
-  "Jangan berhenti sebelum bunyi penutup terdengar, lalu lepaskan napas.",
-];
-const STEPS_PLURAL = [
-  "Ucapkan kata dasarnya sampai selesai dengan jelas.",
-  "Langsung sambung dengan desis /s/ atau /z/ di ujung kata tanpa jeda.",
-  "Kalau ada dua konsonan di akhir, ucapkan keduanya satu per satu dengan cepat.",
-];
-
-const PAIRS_V1 = ["very", "ferry", "van", "fan", "vest", "fest"];
-const PAIRS_V2 = ["view", "few", "vine", "fine", "veal", "feel"];
-const PAIRS_V3 = ["save", "safe", "leave", "leaf", "prove", "proof"];
-const PAIRS_V4 = ["have", "half", "leave", "leaf", "save", "safe"];
-const PAIRS_TH1 = ["think", "sink", "thank", "tank", "three", "tree"];
-const PAIRS_TH2 = ["both", "boat", "math", "mat", "path", "pat"];
-const PAIRS_TH3 = ["thirty", "dirty", "thin", "tin", "thick", "tick"];
-const PAIRS_TH4 = ["three", "free", "thank", "tank", "thin", "tin"];
-const PAIRS_DH1 = ["then", "den", "they", "day", "those", "doze"];
-const PAIRS_DH2 = ["though", "dough", "than", "Dan", "there", "dare"];
-const PAIRS_SH1 = ["ship", "sip", "shop", "sop", "sheet", "seat"];
-const PAIRS_SH2 = ["show", "so", "shy", "sigh", "she", "sea"];
-const PAIRS_SH3 = ["shore", "sore", "shell", "sell", "sheep", "seep"];
-
-const m = (word: string, status: MarkStatus, note: string, ipa: string): Mark => [word, status, note, ipa];
 
 function buildDrills(goalTag: string, seeds: DrillSeed[]) {
   return seeds.map((s, index) => ({
@@ -1151,50 +1117,20 @@ const HARIAN_SEEDS: DrillSeed[] = [
   },
 ];
 
-const DRILL_SENTENCES = [
-  ...buildDrills("kerja", KERJA_SEEDS),
-  ...buildDrills("jalan", JALAN_SEEDS),
-  ...buildDrills("ielts", IELTS_SEEDS),
-  ...buildDrills("harian", HARIAN_SEEDS),
+// Urutan bab diatur per level di src/lib/chapters.ts, jadi materi tambahan cukup disambung.
+export const DRILL_SENTENCES = [
+  ...buildDrills("kerja", [...KERJA_SEEDS, ...KERJA_EXTRA_DRILLS]),
+  ...buildDrills("jalan", [...JALAN_SEEDS, ...JALAN_EXTRA_DRILLS]),
+  ...buildDrills("ielts", [...IELTS_SEEDS, ...IELTS_EXTRA_DRILLS]),
+  ...buildDrills("harian", [...HARIAN_SEEDS, ...HARIAN_EXTRA_DRILLS]),
 ];
 
 // ---------------------------------------------------------------------------
-// Konten belajar: skenario roleplay (8 skenario x 6 giliran)
+// Konten belajar: skenario roleplay (20 skenario x 6 giliran, 5 per tujuan).
+// 8 skenario awal ada di file ini; 12 tambahan di seed-content-<tujuan>.ts.
 // ---------------------------------------------------------------------------
 
-type CorrectionSeed = {
-  word: string;
-  ipa: string;
-  phoneme: string;
-  errorPattern: string;
-  status: MarkStatus;
-  promptText: string;
-  detailText: string;
-};
-
-type NodeSeed = {
-  line: string;
-  tr: string;
-  hints: string[];
-  fix?: CorrectionSeed;
-};
-
-type ScenarioSeed = {
-  slug: string;
-  goalTag: string;
-  title: string;
-  category: string;
-  cefrLevel: string;
-  characterName: string;
-  characterRole: string;
-  characterTrait: string;
-  description: string;
-  missions: string[];
-  phrases: { phrase: string; meaning: string }[];
-  nodes: NodeSeed[];
-};
-
-const SCENARIO_SEEDS: ScenarioSeed[] = [
+const BASE_SCENARIO_SEEDS: ScenarioSeed[] = [
   {
     slug: "memesan-di-kafe",
     goalTag: "harian",
@@ -1811,6 +1747,14 @@ const SCENARIO_SEEDS: ScenarioSeed[] = [
   },
 ];
 
+export const SCENARIO_SEEDS: ScenarioSeed[] = [
+  ...BASE_SCENARIO_SEEDS,
+  ...KERJA_EXTRA_SCENARIOS,
+  ...JALAN_EXTRA_SCENARIOS,
+  ...IELTS_EXTRA_SCENARIOS,
+  ...HARIAN_EXTRA_SCENARIOS,
+];
+
 /**
  * Materi belajar saja (panduan fonem, kalimat drill, skenario roleplay).
  * Aman untuk production: tidak menyentuh pengguna, sesi, atau Bank Kesalahan.
@@ -1937,10 +1881,10 @@ export async function seedContent(prisma: PrismaClient) {
     ],
   });
 
-  // 4. Seed 60 Drill Sentences (4 learning goals x 3 CEFR levels x 5 sentences)
+  // 4. Seed 100 Drill Sentences (4 learning goals x 5 CEFR levels x 5 sentences)
   await prisma.drillSentence.createMany({ data: DRILL_SENTENCES });
 
-  // 5. Seed 8 Roleplay Scenarios (2 per learning goal, 6 turns each)
+  // 5. Seed 20 Roleplay Scenarios (5 per learning goal, 6 turns each)
   for (const scenario of SCENARIO_SEEDS) {
     const created = await prisma.scenario.create({
       data: {

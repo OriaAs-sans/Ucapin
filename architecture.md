@@ -5,7 +5,7 @@
 ## 1. Tahapan produk
 | Tahap | Isi | AI yang dipakai |
 |---|---|---|
-| **MVP (Aktif)** | Pronunciation Drill, Shadowing (dengar, tirukan, bandingkan tempo), **Roleplay berskrip** (6 giliran, 8 skenario), Bank Kesalahan dengan pengulangan berjarak, Session Result, onboarding, streak/target harian | **Pengenal suara ElevenLabs Scribe** (kata + keyakinan + waktu) dan **TTS ElevenLabs**. Tanpa LLM. |
+| **MVP (Aktif)** | Pronunciation Drill, Shadowing (dengar, tirukan, bandingkan tempo), **Roleplay berskrip** (6 giliran, 20 skenario), Bank Kesalahan dengan pengulangan berjarak, Session Result, onboarding, streak/target harian | **Pengenal suara ElevenLabs Scribe** (kata + keyakinan + waktu) dan **TTS ElevenLabs**. Tanpa LLM. |
 | **v1.5** | AI Roleplay bebas (turn-based STT → LLM → TTS), Speaking Test gaya IELTS | + STT, LLM, TTS |
 | **v2** | Percakapan real-time (full duplex), aplikasi mobile | + LiveKit + model speech-to-speech |
 
@@ -51,7 +51,7 @@ c:\My things\Project\Ucapin\
 │   │   ├── latihan-ucapan/page.tsx # Pronunciation Drill (filter per tujuan belajar atau Bank Kesalahan)
 │   │   ├── masuk/page.tsx          # Login, Daftar Akun Baru, & Pintasan Testing E2E
 │   │   ├── mulai/page.tsx          # Onboarding tujuan & level CEFR
-│   │   ├── roleplay/page.tsx       # Scripted Roleplay (8 skenario, 6 giliran)
+│   │   ├── roleplay/page.tsx       # Scripted Roleplay (20 skenario, 6 giliran)
 │   │   ├── shadowing/page.tsx      # Shadowing: dengar contoh, tirukan, bandingkan tempo
 │   │   ├── loading.tsx / error.tsx / not-found.tsx # State muat, gagal, dan 404 global
 │   │   ├── globals.css             # CSS Variables tema terang/gelap & @font-face
@@ -88,7 +88,9 @@ c:\My things\Project\Ucapin\
 │   │   ├── session.ts              # Cookie sesi bertanda tangan HMAC (SESSION_SECRET), kedaluwarsa 30 hari
 │   │   ├── test-accounts.ts        # Id akun testing + baca email/sandi testing dari env
 │   │   ├── speech-mock.ts          # Pengenal suara tiruan (SPEECH_MOCK, hanya di luar production) + speech-mock.test.ts
-│   │   ├── seed-data.ts            # Isi data awal (dipakai seed & reset)
+│   │   ├── seed-data.ts            # Isi data awal (dipakai seed & reset); materi A2, B1, B2 dan 8 skenario awal
+│   │   ├── seed-shared.ts          # Tipe dan helper materi (DrillSeed, ScenarioSeed, STEPS_*, PAIRS_*)
+│   │   ├── seed-content-<tujuan>.ts # Materi tambahan per tujuan: drill A1 dan C1 + 3 skenario
 │   │   └── repositories/ucapin-repository.ts # Query & mutasi terpusat ke Laragon PostgreSQL
 │   └── types/ucapin.ts             # Kontrak DTO TypeScript
 └── prototype/                      # Prototipe statis HTML/CSS/JS awal
@@ -108,14 +110,14 @@ c:\My things\Project\Ucapin\
 ## 4b. Penilaian ucapan & Bank Kesalahan (diperbarui 2026-11-21)
 - **Alur rekam:** `<MicRecorder />` merekam dengan `MediaRecorder` (maks. 30 detik), mengirim audio ke `/api/v1/speech/transcribe`, lalu ElevenLabs Scribe mengembalikan kata, keyakinan (dari logprob), dan waktu. Web Speech API tidak dipakai. Rekaman kosong atau diam ditolak dengan pesan, tidak pernah dianggap benar.
 - **Mode uji tanpa kuota (diperbarui 2026-11-21):** bila `SPEECH_MOCK` berisi `jelas` atau `salah-ucap` dan bukan production, route transcribe membuat transkrip dari kalimat acuan (dikirim `MicRecorder` sebagai field `reference`) tanpa memanggil ElevenLabs. `SpeechAttempt` tetap dicatat, jadi kuota, menit, dan verifikasi bab tetap teruji; respons membawa `mock` dan `MicRecorder` menampilkan label "Mode uji". Tes E2E menjalankan server sendiri di port 3100 (`.next-e2e`) dengan `SPEECH_MOCK="salah-ucap"`, dan audio mikrofon palsu dibuat lokal (tanpa TTS).
-- **Pola L1 yang dikenali:** aturan bunyi lebih dulu (`/v/` jadi `/f/`, `/b/`, `/p/`; `th` di posisi mana pun jadi `/t/`, `/d/`, `/s/`, `/z/` dengan pembeda `/θ/` dan `/ð/`; `/ʃ/` jadi `/s/`; posisi "akhir" ikut dilabeli), lalu kamus 67 kata dari materi latihan, lalu konsonan akhir yang hilang.
+- **Pola L1 yang dikenali:** aturan bunyi lebih dulu (`/v/` jadi `/f/`, `/b/`, `/p/`; `th` di posisi mana pun jadi `/t/`, `/d/`, `/s/`, `/z/` dengan pembeda `/θ/` dan `/ð/`; `/ʃ/` jadi `/s/`; posisi "akhir" ikut dilabeli), lalu kamus 103 kata dari materi latihan (termasuk materi A1 dan C1), lalu konsonan akhir yang hilang.
 - **Penilai** (`assessSpokenUtterance`): kata acuan disejajarkan dengan kata terucap (edit distance tingkat kata). Status per kata: cocok + yakin = jelas, cocok + kurang yakin = hampir, tertukar/terlewat = ulang. Pola L1 dikenali dari pasangan kata (`/v/ jadi /f/`, `/θ/ jadi /t/`, `/ð/ jadi /d/`, `/ʃ/ jadi /s/`, konsonan akhir hilang).
 - **Skor:** Kejelasan (kata dipahami), Ketepatan kata (rata-rata keyakinan), Kelancaran (tempo 110 sampai 170 kata/menit dan jeda panjang), Kelengkapan. Tata bahasa dan kosakata **tidak dinilai** dan tidak ditampilkan; kolomnya disimpan 0.
 - **Bank Kesalahan:** hanya kata dengan masalah bunyi nyata yang masuk (bukan kata fungsi yang terlewat, bukan saat kalimat yang diucapkan berbeda). Jadwal: tahap 0 ulang hari ini; setiap kali kata jatuh tempo terdengar jelas, naik ke jarak 1, 3, 7, 14 hari; berhasil di tahap 4 = dikuasai. Salah lagi = kembali ke tahap 0. Kolom: `reviewStage`, `nextReviewAt`, `lastPracticedAt`, `masteredAt` (migrasi `20261121120000_mistake_spaced_repetition`).
 - **Menit bicara** untuk target harian dan liga dihitung dari lama rekaman, bukan lama halaman terbuka.
 
 ## 4c. Bab, statistik, dan privasi (diperbarui 2026-11-21)
-- **Bab:** Latihan Ucapan dibagi per tujuan x level (5 kalimat per bab, kunci `drill:<tujuan>:<level>`); Roleplay per skenario (`roleplay:<slug>`), diurutkan per level lalu urutan materi. Bab pertama tiap jalur terbuka, berikutnya terbuka setelah bab sebelumnya selesai (`ChapterProgress`). Logika murni di `src/lib/chapters.ts`; peta bab memakai `<ChapterMap />` (`src/components/shared/chapter-map.tsx`).
+- **Bab:** Latihan Ucapan dibagi per tujuan x level A1 sampai C1 (5 bab per tujuan, 5 kalimat per bab, total 100 kalimat; kunci `drill:<tujuan>:<level>`); Roleplay per skenario (`roleplay:<slug>`, 5 skenario per tujuan, total 20), diurutkan per level lalu urutan materi. Kartu roleplay di Beranda selalu menunjuk bab yang terbuka (skenario tersimpan yang terkunci diganti bab terbuka pertama di jalur tujuan utama). Bab pertama tiap jalur terbuka, berikutnya terbuka setelah bab sebelumnya selesai (`ChapterProgress`). Logika murni di `src/lib/chapters.ts`; peta bab memakai `<ChapterMap />` (`src/components/shared/chapter-map.tsx`).
 - **Verifikasi bab di server** (`verifyChapterCompletion`): bab terbuka, sesi memuat semua kalimat/giliran, dan ada rekaman yang dinilai server (`SpeechAttempt`) sebanyak isi bab dalam 3 jam terakhir. Bab terkunci yang dibuka lewat URL dialihkan ke peta dengan pesan.
 - **Statistik dari data bertanggal (WIB):** menit hari ini, total, streak, grafik minggu ini, dan liga dihitung di `src/server/activity.ts` dari `SpeechAttempt` (durasi audio yang dinilai server, tanpa audio dan transkrip). Tidak ada penghitung tersimpan, jadi pergantian hari otomatis dan menit tidak bisa dipalsukan dari browser. Tabel `DailyActivity` dan `LeagueEntry` dihapus.
 - **Liga mingguan** opt-in dengan nama panggilan (`leagueOptIn`, `leagueNickname`), reset tiap Senin 00.00 WIB, 10 teratas + posisi sendiri.
