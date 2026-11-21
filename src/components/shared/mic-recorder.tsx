@@ -60,6 +60,8 @@ export function MicRecorder({
   const [elapsedSec, setElapsedSec] = React.useState(0);
   const [manualOpen, setManualOpen] = React.useState(false);
   const [manualText, setManualText] = React.useState("");
+  // Diisi server bila SPEECH_MOCK aktif (hanya di luar production), agar hasil tiruan tidak disangka asli.
+  const [mockMode, setMockMode] = React.useState<string | null>(null);
 
   const streamRef = React.useRef<MediaStream | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
@@ -96,6 +98,8 @@ export function MicRecorder({
       try {
         const form = new FormData();
         form.append("audio", blob, "ucapan.webm");
+        // Hanya dipakai mode uji pengenal suara di server; penilaian asli tetap dari audio.
+        if (referenceText) form.append("reference", referenceText);
         const res = await fetch("/api/v1/speech/transcribe", { method: "POST", body: form });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) {
@@ -107,6 +111,7 @@ export function MicRecorder({
           onStateChange("idle");
           return;
         }
+        setMockMode(typeof data.mock === "string" ? data.mock : null);
         const words: SpokenWord[] = Array.isArray(data.words) ? data.words : [];
         if (words.length === 0) {
           setIssue({
@@ -133,7 +138,7 @@ export function MicRecorder({
         onStateChange("idle");
       }
     },
-    [onFinishRecording, onStateChange]
+    [onFinishRecording, onStateChange, referenceText]
   );
 
   const stopRecording = React.useCallback(() => {
@@ -353,6 +358,16 @@ export function MicRecorder({
     </Button>
   );
 
+  const mockNotice = isDevBuild && mockMode && (
+    <p
+      role="note"
+      className="rounded-control border border-dashed border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-xs text-[var(--text-2)]"
+    >
+      Mode uji ({mockMode}): transkrip dibuat dari kalimat acuan, bukan dari suaramu. Kuota
+      ElevenLabs tidak terpakai.
+    </p>
+  );
+
   const micButton = (
     <button
       type="button"
@@ -404,6 +419,7 @@ export function MicRecorder({
           {devManualToggle}
         </div>
         {devManualForm}
+        {mockNotice}
         {issuePanel}
       </div>
     );
@@ -436,6 +452,7 @@ export function MicRecorder({
         {devManualToggle}
       </div>
       {devManualForm && <div className="mt-3 flex w-full justify-center">{devManualForm}</div>}
+      {mockNotice && <div className="mt-3 flex w-full max-w-xl justify-center">{mockNotice}</div>}
       {issuePanel}
     </div>
   );

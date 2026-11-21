@@ -13,9 +13,10 @@ Aturan kerja untuk Claude Code (dan agent/subagent mana pun) di project ini. Atu
 - Eksekusi baru dimulai setelah pengguna menyetujui (mis. "ok", "lanjut", "boleh").
 - Pengecualian: membaca file / mengecek kondisi untuk menjawab pertanyaan boleh langsung dilakukan.
 
-## 3. graphify wajib di-update
-- Knowledge graph project ada di `graphify-out/`. Setiap ada **perubahan konsep** (design.md, architecture.md, rules.md, keputusan produk, riset) **atau perubahan kode**, jalankan update graphify sebelum menutup pekerjaan, lalu sebutkan di ringkasan bahwa graph sudah diperbarui.
-- Tidak memakai hook; ini tanggung jawab agent di akhir setiap tugas yang mengubah sesuatu.
+## 3. graphify di-update setelah perubahan kode
+- Knowledge graph project ada di `graphify-out/` (lokal saja, tidak di-push). Setiap ada **perubahan kode**, jalankan update graphify sebelum menutup pekerjaan, lalu sebutkan di ringkasan bahwa graph sudah diperbarui.
+- Update memakai jalur AST untuk kode (tanpa LLM). **Jangan** menjalankan ekstraksi semantik per chunk (subagent) untuk dokumen, riset, atau laporan, kecuali pengguna memintanya; prosesnya lama dan boros token.
+- Tidak memakai hook; ini tanggung jawab agent di akhir setiap tugas yang mengubah kode.
 - Untuk pertanyaan tentang struktur project/konsep, query graphify dulu sebelum membaca banyak file.
 
 ## 4. Dokumen sumber kebenaran

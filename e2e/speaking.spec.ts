@@ -21,7 +21,7 @@ test.use({
 
 test.skip(
   !hasAudio || !env.TEST_ACCOUNT_ACTIVE_EMAIL,
-  "Butuh ELEVENLABS_API_KEY dan akun testing di .env.local"
+  "Butuh akun testing di .env.local (audio uji dibuat otomatis oleh global-setup)"
 );
 
 async function loginActive(page: Page) {
@@ -44,7 +44,9 @@ async function recordOnce(page: Page) {
   });
 }
 
-test("rekam ucapan lalu dinilai dari audio sungguhan", async ({ page }) => {
+// Server E2E memakai SPEECH_MOCK="salah-ucap": satu kata di kalimat acuan diganti dengan pola
+// salah ucap khas Indonesia, jadi hasil penilaian bisa dipastikan tanpa memanggil ElevenLabs.
+test("rekam ucapan lalu satu salah ucap khas Indonesia ditandai", async ({ page }) => {
   await loginActive(page);
   await page.goto("/latihan-ucapan?bab=kerja-A2");
   await expect(page.locator("[data-sentence-text]").first()).toHaveAttribute(
@@ -53,15 +55,8 @@ test("rekam ucapan lalu dinilai dari audio sungguhan", async ({ page }) => {
   );
   await recordOnce(page);
   await expect(page.getByText(/Transkrip terdeteksi/)).toBeVisible();
-  // Pengenal suara kadang "membetulkan" tree menjadi three. Hasilnya dicatat, bukan digagalkan,
-  // karena itu perilaku layanan eksternal, bukan bug aplikasi.
-  const detected = await page.getByText(/Ulang · \/θ\/ jadi \/t\//).isVisible();
-  test.info().annotations.push({
-    type: "pola-L1",
-    description: detected
-      ? "three diucapkan tree: terdeteksi /θ/ jadi /t/"
-      : "pengenal suara membetulkan tree menjadi three (tidak terdeteksi kali ini)",
-  });
+  await expect(page.getByText(/Mode uji \(salah-ucap\)/)).toBeVisible();
+  await expect(page.getByText(/Ulang · \/(v|θ|ð|ʃ)\/ (akhir )?jadi \/\w\//).first()).toBeVisible();
 });
 
 test("bab terkunci tidak bisa dibuka lewat URL", async ({ page }) => {

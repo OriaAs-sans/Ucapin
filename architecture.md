@@ -79,6 +79,7 @@ c:\My things\Project\Ucapin\
 │   │   └── session-result/session-result-workspace.tsx
 │   ├── lib/utils.ts                # Helper cn(), speakEnglish() (TTS ElevenLabs + cadangan browser), mapMicError(), isDevBuild
 │   ├── lib/speech-assessor.ts      # Penilai: penyejajaran kata, pola L1 Indonesia, skor Kejelasan/Ketepatan kata/Kelancaran/Kelengkapan
+│   ├── lib/speech-assessor.test.ts # Unit test penilai dengan transkrip buatan (npm test, node:test lewat tsx)
 │   ├── lib/spaced-repetition.ts    # Jadwal Bank Kesalahan 1, 3, 7, 14 hari
 │   ├── middleware.ts               # Tanpa cookie sesi: halaman → /masuk, API → 401
 │   ├── server/
@@ -86,6 +87,7 @@ c:\My things\Project\Ucapin\
 │   │   ├── password.ts             # Hash sandi scrypt (node:crypto) + verifikasi timing-safe
 │   │   ├── session.ts              # Cookie sesi bertanda tangan HMAC (SESSION_SECRET), kedaluwarsa 30 hari
 │   │   ├── test-accounts.ts        # Id akun testing + baca email/sandi testing dari env
+│   │   ├── speech-mock.ts          # Pengenal suara tiruan (SPEECH_MOCK, hanya di luar production) + speech-mock.test.ts
 │   │   ├── seed-data.ts            # Isi data awal (dipakai seed & reset)
 │   │   └── repositories/ucapin-repository.ts # Query & mutasi terpusat ke Laragon PostgreSQL
 │   └── types/ucapin.ts             # Kontrak DTO TypeScript
@@ -105,6 +107,8 @@ c:\My things\Project\Ucapin\
 
 ## 4b. Penilaian ucapan & Bank Kesalahan (diperbarui 2026-11-21)
 - **Alur rekam:** `<MicRecorder />` merekam dengan `MediaRecorder` (maks. 30 detik), mengirim audio ke `/api/v1/speech/transcribe`, lalu ElevenLabs Scribe mengembalikan kata, keyakinan (dari logprob), dan waktu. Web Speech API tidak dipakai. Rekaman kosong atau diam ditolak dengan pesan, tidak pernah dianggap benar.
+- **Mode uji tanpa kuota (diperbarui 2026-11-21):** bila `SPEECH_MOCK` berisi `jelas` atau `salah-ucap` dan bukan production, route transcribe membuat transkrip dari kalimat acuan (dikirim `MicRecorder` sebagai field `reference`) tanpa memanggil ElevenLabs. `SpeechAttempt` tetap dicatat, jadi kuota, menit, dan verifikasi bab tetap teruji; respons membawa `mock` dan `MicRecorder` menampilkan label "Mode uji". Tes E2E menjalankan server sendiri di port 3100 (`.next-e2e`) dengan `SPEECH_MOCK="salah-ucap"`, dan audio mikrofon palsu dibuat lokal (tanpa TTS).
+- **Pola L1 yang dikenali:** aturan bunyi lebih dulu (`/v/` jadi `/f/`, `/b/`, `/p/`; `th` di posisi mana pun jadi `/t/`, `/d/`, `/s/`, `/z/` dengan pembeda `/θ/` dan `/ð/`; `/ʃ/` jadi `/s/`; posisi "akhir" ikut dilabeli), lalu kamus 67 kata dari materi latihan, lalu konsonan akhir yang hilang.
 - **Penilai** (`assessSpokenUtterance`): kata acuan disejajarkan dengan kata terucap (edit distance tingkat kata). Status per kata: cocok + yakin = jelas, cocok + kurang yakin = hampir, tertukar/terlewat = ulang. Pola L1 dikenali dari pasangan kata (`/v/ jadi /f/`, `/θ/ jadi /t/`, `/ð/ jadi /d/`, `/ʃ/ jadi /s/`, konsonan akhir hilang).
 - **Skor:** Kejelasan (kata dipahami), Ketepatan kata (rata-rata keyakinan), Kelancaran (tempo 110 sampai 170 kata/menit dan jeda panjang), Kelengkapan. Tata bahasa dan kosakata **tidak dinilai** dan tidak ditampilkan; kolomnya disimpan 0.
 - **Bank Kesalahan:** hanya kata dengan masalah bunyi nyata yang masuk (bukan kata fungsi yang terlewat, bukan saat kalimat yang diucapkan berbeda). Jadwal: tahap 0 ulang hari ini; setiap kali kata jatuh tempo terdengar jelas, naik ke jarak 1, 3, 7, 14 hari; berhasil di tahap 4 = dikuasai. Salah lagi = kembali ke tahap 0. Kolom: `reviewStage`, `nextReviewAt`, `lastPracticedAt`, `masteredAt` (migrasi `20261121120000_mistake_spaced_repetition`).

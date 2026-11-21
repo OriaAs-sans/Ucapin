@@ -3,6 +3,7 @@ import { prisma } from "@/server/db";
 import { checkSpeechQuota } from "@/server/activity";
 import { getSessionUserId } from "@/server/repositories/ucapin-repository";
 import { SpeechServiceError, transcribeEnglish } from "@/server/elevenlabs";
+import { getSpeechMockMode, mockTranscription } from "@/server/speech-mock";
 
 export const dynamic = "force-dynamic";
 
@@ -43,14 +44,25 @@ export async function POST(request: Request) {
     );
   }
 
+  const mockMode = getSpeechMockMode();
+  const reference = String(form?.get("reference") ?? "").trim().slice(0, 300);
+  if (mockMode && !reference) {
+    return NextResponse.json(
+      { ok: false, error: "Mode uji pengenal suara butuh kalimat acuan dari halaman latihan." },
+      { status: 400 }
+    );
+  }
+
   try {
-    const result = await transcribeEnglish(audio);
+    const result = mockMode
+      ? mockTranscription(reference, mockMode)
+      : await transcribeEnglish(audio);
     // Rekaman tanpa kata tetap dihitung untuk kuota, tetapi tidak menambah menit bicara.
     const lastWordEnd = result.words.at(-1)?.end ?? 0;
     const audioSec =
       result.words.length === 0 ? 0 : Math.min(60, result.audioDurationSec || lastWordEnd);
     await prisma.speechAttempt.create({ data: { userId, audioSec } });
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: true, ...result, ...(mockMode ? { mock: mockMode } : {}) });
   } catch (error) {
     const status = error instanceof SpeechServiceError ? error.status : 500;
     const message =

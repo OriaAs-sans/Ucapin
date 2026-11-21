@@ -261,7 +261,237 @@ const INDONESIAN_L1_SUBSTITUTIONS: Record<
     ipa: "/muːvd/",
     errorNote: "/vd/ akhir hilang",
   },
+  // Kata dari materi latihan yang sering "dibetulkan" pengenal suara menjadi kata Inggris lain.
+  // Perubahan yang persis mengikuti aturan (v jadi f, th jadi t, dan seterusnya) sudah ditangkap
+  // detectL1Pattern; entri di sini untuk hasil dengar yang ejaannya ikut berubah, dan untuk IPA.
+  have: {
+    substitutes: ["half", "haf", "hab"],
+    phonemeKey: "/v/",
+    ipa: "/hæv/",
+    errorNote: "/v/ akhir jadi /f/",
+  },
+  give: {
+    substitutes: ["gif", "gift", "gib"],
+    phonemeKey: "/v/",
+    ipa: "/ɡɪv/",
+    errorNote: "/v/ akhir jadi /f/",
+  },
+  leave: {
+    substitutes: ["leaf", "lif", "lift"],
+    phonemeKey: "/v/",
+    ipa: "/liːv/",
+    errorNote: "/v/ akhir jadi /f/",
+  },
+  love: {
+    substitutes: ["laugh", "lof", "lub"],
+    phonemeKey: "/v/",
+    ipa: "/lʌv/",
+    errorNote: "/v/ akhir jadi /f/",
+  },
+  move: {
+    substitutes: ["moof", "mood", "moo"],
+    phonemeKey: "/v/",
+    ipa: "/muːv/",
+    errorNote: "/v/ akhir jadi /f/",
+  },
+  view: {
+    substitutes: ["few", "pew", "bew"],
+    phonemeKey: "/v/",
+    ipa: "/vjuː/",
+    errorNote: "/v/ jadi /f/",
+  },
+  over: {
+    substitutes: ["ofer", "ober", "offer"],
+    phonemeKey: "/v/",
+    ipa: "/ˈoʊvər/",
+    errorNote: "/v/ jadi /f/",
+  },
+  never: {
+    substitutes: ["nefer", "neber"],
+    phonemeKey: "/v/",
+    ipa: "/ˈnɛvər/",
+    errorNote: "/v/ jadi /f/",
+  },
+  every: {
+    substitutes: ["efery", "ebery", "ebry"],
+    phonemeKey: "/v/",
+    ipa: "/ˈɛvri/",
+    errorNote: "/v/ jadi /f/",
+  },
+  seven: {
+    substitutes: ["sefen", "seben", "seffen"],
+    phonemeKey: "/v/",
+    ipa: "/ˈsɛvən/",
+    errorNote: "/v/ jadi /f/",
+  },
+  village: {
+    substitutes: ["fillage", "billage", "pillage"],
+    phonemeKey: "/v/",
+    ipa: "/ˈvɪlɪdʒ/",
+    errorNote: "/v/ jadi /f/",
+  },
+  favorite: {
+    substitutes: ["faforite", "faborite", "fafourite"],
+    phonemeKey: "/v/",
+    ipa: "/ˈfeɪvərɪt/",
+    errorNote: "/v/ jadi /f/",
+  },
+  three: {
+    substitutes: ["tree", "sree", "tri"],
+    phonemeKey: "/θ/",
+    ipa: "/θriː/",
+    errorNote: "/θ/ jadi /t/",
+  },
+  thirty: {
+    substitutes: ["dirty", "tirty", "sirty", "turty"],
+    phonemeKey: "/θ/",
+    ipa: "/ˈθɜrti/",
+    errorNote: "/θ/ jadi /t/",
+  },
+  thing: {
+    substitutes: ["ting", "sing", "tin"],
+    phonemeKey: "/θ/",
+    ipa: "/θɪŋ/",
+    errorNote: "/θ/ jadi /t/",
+  },
+  thanks: {
+    substitutes: ["tanks", "sanks", "tenks"],
+    phonemeKey: "/θ/",
+    ipa: "/θæŋks/",
+    errorNote: "/θ/ jadi /t/",
+  },
+  month: {
+    substitutes: ["mont", "mon", "mons"],
+    phonemeKey: "/θ/",
+    ipa: "/mʌnθ/",
+    errorNote: "/θ/ akhir jadi /t/",
+  },
+  health: {
+    substitutes: ["helt", "hell", "helts"],
+    phonemeKey: "/θ/",
+    ipa: "/hɛlθ/",
+    errorNote: "/θ/ akhir jadi /t/",
+  },
+  fourth: {
+    substitutes: ["fort", "fourt", "four", "forth"],
+    phonemeKey: "/θ/",
+    ipa: "/fɔrθ/",
+    errorNote: "/θ/ akhir jadi /t/",
+  },
+  birthday: {
+    substitutes: ["birtday", "bersday", "burday"],
+    phonemeKey: "/θ/",
+    ipa: "/ˈbɜrθˌdeɪ/",
+    errorNote: "/θ/ jadi /t/",
+  },
+  other: {
+    substitutes: ["oder", "udder", "ozer", "otter"],
+    phonemeKey: "/ð/",
+    ipa: "/ˈʌðər/",
+    errorNote: "/ð/ jadi /d/",
+  },
+  weather: {
+    substitutes: ["wedder", "wezer", "wetter"],
+    phonemeKey: "/ð/",
+    ipa: "/ˈwɛðər/",
+    errorNote: "/ð/ jadi /d/",
+  },
+  together: {
+    substitutes: ["togeder", "togezer", "togedder"],
+    phonemeKey: "/ð/",
+    ipa: "/təˈɡɛðər/",
+    errorNote: "/ð/ jadi /d/",
+  },
+  that: {
+    substitutes: ["dat", "zat", "dad"],
+    phonemeKey: "/ð/",
+    ipa: "/ðæt/",
+    errorNote: "/ð/ jadi /d/",
+  },
+  then: {
+    substitutes: ["den", "zen", "dan"],
+    phonemeKey: "/ð/",
+    ipa: "/ðɛn/",
+    errorNote: "/ð/ jadi /d/",
+  },
+  with: {
+    substitutes: ["wit", "wiz", "wis", "wid"],
+    phonemeKey: "/ð/",
+    ipa: "/wɪð/",
+    errorNote: "/ð/ akhir jadi /t/",
+  },
+  share: {
+    substitutes: ["sare", "sair", "chair"],
+    phonemeKey: "/ʃ/",
+    ipa: "/ʃɛr/",
+    errorNote: "/ʃ/ jadi /s/",
+  },
+  short: {
+    substitutes: ["sort", "sport", "shot"],
+    phonemeKey: "/ʃ/",
+    ipa: "/ʃɔrt/",
+    errorNote: "/ʃ/ jadi /s/",
+  },
+  finish: {
+    substitutes: ["finis", "finest", "pinish"],
+    phonemeKey: "/ʃ/",
+    ipa: "/ˈfɪnɪʃ/",
+    errorNote: "/ʃ/ akhir jadi /s/",
+  },
+  fresh: {
+    substitutes: ["fres", "flesh", "press"],
+    phonemeKey: "/ʃ/",
+    ipa: "/frɛʃ/",
+    errorNote: "/ʃ/ akhir jadi /s/",
+  },
+  cash: {
+    substitutes: ["cass", "cast", "kas"],
+    phonemeKey: "/ʃ/",
+    ipa: "/kæʃ/",
+    errorNote: "/ʃ/ akhir jadi /s/",
+  },
+  english: {
+    substitutes: ["englis", "inglis"],
+    phonemeKey: "/ʃ/",
+    ipa: "/ˈɪŋɡlɪʃ/",
+    errorNote: "/ʃ/ akhir jadi /s/",
+  },
+  arrived: {
+    substitutes: ["arrive", "arrife"],
+    phonemeKey: "/-ed/",
+    ipa: "/əˈraɪvd/",
+    errorNote: "/vd/ akhir hilang",
+  },
+  improved: {
+    substitutes: ["improve", "improf"],
+    phonemeKey: "/-ed/",
+    ipa: "/ɪmˈpruːvd/",
+    errorNote: "/vd/ akhir hilang",
+  },
+  delivered: {
+    substitutes: ["deliver", "delifer"],
+    phonemeKey: "/-ed/",
+    ipa: "/dɪˈlɪvərd/",
+    errorNote: "/d/ akhir hilang",
+  },
+  reserved: {
+    substitutes: ["reserve", "reserf"],
+    phonemeKey: "/-ed/",
+    ipa: "/rɪˈzɜrvd/",
+    errorNote: "/vd/ akhir hilang",
+  },
+  finished: {
+    substitutes: ["finish", "finis"],
+    phonemeKey: "/-ed/",
+    ipa: "/ˈfɪnɪʃt/",
+    errorNote: "/t/ akhir hilang",
+  },
 };
+
+/** Satu contoh hasil dengar salah ucap untuk kata di kamus L1 (dipakai mode uji pengenal suara). */
+export function knownL1Substitute(word: string): string | null {
+  return INDONESIAN_L1_SUBSTITUTIONS[word.toLowerCase()]?.substitutes[0] ?? null;
+}
 
 export interface WordCoachDetail {
   word: string;
@@ -339,7 +569,14 @@ const FUNCTION_WORDS = new Set([
 
 const VOICED_TH_WORDS = new Set([
   "this", "that", "the", "they", "then", "there", "these", "those", "them", "their", "with",
+  "than", "though", "although", "thus",
 ]);
+
+// "th" di kata fungsi di atas dan di pola "-ther" (other, weather, together) bersuara /ð/;
+// selain itu (think, three, both, month) tidak bersuara /θ/.
+function isVoicedTh(word: string): boolean {
+  return VOICED_TH_WORDS.has(word) || /th(er|ers|ering)$/.test(word);
+}
 
 const OK_CONFIDENCE = 0.7;
 const ALMOST_CONFIDENCE = 0.4;
@@ -365,6 +602,10 @@ function detectL1Pattern(
   expected: string,
   heard: string
 ): { phonemeKey: string; note: string } | null {
+  // Aturan bunyi dulu: penggantian huruf yang persis memberi label paling tepat
+  // ("sink" untuk think = /θ/ jadi /s/, bukan /t/). Kamus menangkap sisanya.
+  const rule = detectSoundSubstitution(expected, heard);
+  if (rule) return rule;
   const known = INDONESIAN_L1_SUBSTITUTIONS[expected];
   if (known && known.substitutes.includes(heard)) {
     return { phonemeKey: known.phonemeKey, note: known.errorNote };
@@ -374,19 +615,35 @@ function detectL1Pattern(
       return { phonemeKey: "/-ed/", note: `konsonan akhir -${suffix} hilang` };
     }
   }
-  if (expected.includes("v") && heard === expected.replace(/v/g, "f")) {
-    return { phonemeKey: "/v/", note: "/v/ jadi /f/" };
+  return null;
+}
+
+function detectSoundSubstitution(
+  expected: string,
+  heard: string
+): { phonemeKey: string; note: string } | null {
+  // /v/ jadi /f/ umum di semua daerah; /b/ dan /p/ sering pada penutur Sunda.
+  if (expected.includes("v")) {
+    const pos = /ve?$/.test(expected) ? " akhir" : "";
+    for (const sub of ["f", "b", "p"]) {
+      if (heard === expected.replace(/v/g, sub)) {
+        return { phonemeKey: "/v/", note: `/v/${pos} jadi /${sub}/` };
+      }
+    }
   }
-  if (expected.startsWith("th")) {
-    const rest = expected.slice(2);
-    if (heard === `t${rest}` || heard === `d${rest}`) {
-      return VOICED_TH_WORDS.has(expected)
-        ? { phonemeKey: "/ð/", note: "/ð/ jadi /d/" }
-        : { phonemeKey: "/θ/", note: "/θ/ jadi /t/" };
+  // "th" di posisi mana pun. /t/ dan /d/ umum; /s/ dan /z/ sering pada penutur Sunda.
+  if (expected.includes("th")) {
+    const symbol = isVoicedTh(expected) ? "/ð/" : "/θ/";
+    const pos = expected.endsWith("th") ? " akhir" : "";
+    for (const sub of ["t", "d", "s", "z"]) {
+      if (heard === expected.replace(/th/g, sub)) {
+        return { phonemeKey: symbol, note: `${symbol}${pos} jadi /${sub}/` };
+      }
     }
   }
   if (expected.includes("sh") && heard === expected.replace(/sh/g, "s")) {
-    return { phonemeKey: "/ʃ/", note: "/ʃ/ jadi /s/" };
+    const pos = expected.endsWith("sh") ? " akhir" : "";
+    return { phonemeKey: "/ʃ/", note: `/ʃ/${pos} jadi /s/` };
   }
   return null;
 }

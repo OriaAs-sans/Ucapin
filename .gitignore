@@ -87,13 +87,11 @@ prototype/.taste-skill/
 shots/
 
 # =============================================================================
-# 6. Graphify Local Machine Paths & Cache
+# 6. Riset & knowledge graph (hanya lokal, tidak di-push)
 # =============================================================================
-graphify-out/.graphify_python
-graphify-out/.graphify_root
-graphify-out/.graphify_*.json
-graphify-out/.graphify_*.txt
-graphify-out/cache/
+reports/
+research_notes/
+graphify-out/
 
 # =============================================================================
 # 7. OS, Editor & Logs
@@ -119,3 +117,4 @@ e2e/.fixtures/
 test-results/
 playwright-report/
 .next-build/
+.next-e2e/
