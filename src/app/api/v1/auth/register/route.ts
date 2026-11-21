@@ -1,21 +1,24 @@
 import { NextResponse } from "next/server";
 import {
+  AuthError,
   registerNewUser,
-  SESSION_COOKIE_NAME,
 } from "@/server/repositories/ucapin-repository";
+import { setSessionCookie } from "@/server/session";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, email, password } = body as {
-      name?: string;
-      email?: string;
-      password?: string;
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: unknown;
+      email?: unknown;
+      password?: unknown;
     };
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
 
-    if (!name || !email) {
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { ok: false, error: "Nama lengkap dan email wajib diisi." },
+        { ok: false, error: "Nama, email, dan kata sandi wajib diisi." },
         { status: 400 }
       );
     }
@@ -26,18 +29,19 @@ export async function POST(request: Request) {
       user,
       redirectTo: "/mulai",
     });
-
-    response.cookies.set(SESSION_COOKIE_NAME, user.id, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
+    setSessionCookie(response, user.id);
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Gagal mendaftarkan akun baru";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { ok: false, error: error.message },
+        { status: error.status }
+      );
+    }
+    console.error("Pendaftaran gagal:", error);
+    return NextResponse.json(
+      { ok: false, error: "Gagal mendaftarkan akun. Coba lagi sebentar lagi." },
+      { status: 500 }
+    );
   }
 }

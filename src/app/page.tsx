@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import {
   getDashboardData,
-  getSessionCookieValue,
+  getSessionUserId,
 } from "@/server/repositories/ucapin-repository";
 import { DashboardWorkspace } from "@/features/dashboard/dashboard-workspace";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const cookieVal = await getSessionCookieValue();
-  if (!cookieVal) {
+  const sessionUserId = await getSessionUserId();
+  if (!sessionUserId) {
     redirect("/masuk");
   }
 

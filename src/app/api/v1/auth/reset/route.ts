@@ -1,31 +1,34 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db";
 import { seedUcapinDatabase } from "@/server/seed-data";
-import { SESSION_COOKIE_NAME } from "@/server/repositories/ucapin-repository";
+import { setSessionCookie } from "@/server/session";
+import {
+  isTestAccountId,
+  TEST_ACCOUNT_IDS,
+  testAccountsEnabled,
+} from "@/server/test-accounts";
 
+// Menghapus seluruh data dan mengisi ulang data testing. Hanya aktif di mode pengembangan.
 export async function POST(request: Request) {
+  if (!testAccountsEnabled()) {
+    return NextResponse.json({ ok: false, error: "Tidak ditemukan." }, { status: 404 });
+  }
+
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as { userId?: unknown };
     const targetUserId =
-      typeof body.userId === "string" ? body.userId : "learner-baru";
+      typeof body.userId === "string" && isTestAccountId(body.userId)
+        ? body.userId
+        : TEST_ACCOUNT_IDS.fresh;
 
     await seedUcapinDatabase(prisma);
 
-    const redirectTo = targetUserId === "learner-baru" ? "/mulai" : "/";
     const response = NextResponse.json({
       ok: true,
-      message:
-        "Seluruh data testing di PostgreSQL Laragon berhasil di-reset ke kondisi awal.",
-      redirectTo,
+      message: "Data testing di PostgreSQL Laragon sudah kembali ke kondisi awal.",
+      redirectTo: targetUserId === TEST_ACCOUNT_IDS.fresh ? "/mulai" : "/",
     });
-
-    response.cookies.set(SESSION_COOKIE_NAME, targetUserId, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
+    setSessionCookie(response, targetUserId);
     return response;
   } catch (error) {
     const message =

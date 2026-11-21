@@ -22,19 +22,24 @@ import { Label } from "@/components/ui/label";
 import type { UserProfileDTO } from "@/types/ucapin";
 import { cn } from "@/lib/utils";
 
+// Sama dengan TEST_ACCOUNT_IDS.fresh di src/server/test-accounts.ts (modul server tidak diimpor ke klien).
+const TEST_ACCOUNT_FRESH_ID = "learner-baru";
+
 export interface LoginWorkspaceProps {
   testingUsers: UserProfileDTO[];
+  showTestAccounts: boolean;
   currentUserId?: string;
 }
 
 export function LoginWorkspace({
   testingUsers,
+  showTestAccounts,
   currentUserId,
 }: LoginWorkspaceProps) {
   const router = useRouter();
   const [mode, setMode] = React.useState<"login" | "register">("login");
-  const [email, setEmail] = React.useState("baru@ucapin.id");
-  const [password, setPassword] = React.useState("ucapin123");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
   const [pdpConsent, setPdpConsent] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
@@ -72,6 +77,10 @@ export function LoginWorkspace({
       setErrorMsg("Nama lengkap dan email wajib diisi.");
       return;
     }
+    if (password.length < 8) {
+      setErrorMsg("Kata sandi minimal 8 karakter.");
+      return;
+    }
     if (!pdpConsent) {
       setErrorMsg(
         "Harap centang persetujuan pemrosesan data suara sesuai UU PDP."
@@ -106,13 +115,17 @@ export function LoginWorkspace({
       const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ testAccountId: user.id }),
       });
       const data = await res.json();
-      if (data.ok) {
-        router.push(data.redirectTo ?? "/");
-        router.refresh();
+      if (!res.ok || !data.ok) {
+        setErrorMsg(data.error ?? "Gagal masuk dengan akun testing.");
+        return;
       }
+      router.push(data.redirectTo ?? "/");
+      router.refresh();
+    } catch {
+      setErrorMsg("Terjadi kesalahan koneksi ke server.");
     } finally {
       setLoading(false);
     }
@@ -129,13 +142,17 @@ export function LoginWorkspace({
         body: JSON.stringify({ userId: targetUserId }),
       });
       const data = await res.json();
-      if (data.ok) {
-        setResetMsg(data.message);
-        window.setTimeout(() => {
-          router.push(data.redirectTo ?? "/mulai");
-          router.refresh();
-        }, 500);
+      if (!res.ok || !data.ok) {
+        setErrorMsg(data.error ?? "Gagal me-reset data testing.");
+        return;
       }
+      setResetMsg(data.message);
+      window.setTimeout(() => {
+        router.push(data.redirectTo ?? "/mulai");
+        router.refresh();
+      }, 500);
+    } catch {
+      setErrorMsg("Terjadi kesalahan koneksi ke server.");
     } finally {
       setLoading(false);
     }
@@ -249,133 +266,136 @@ export function LoginWorkspace({
           <ThemeToggle onLightSurface />
         </div>
 
-        {/* 1-Click End-to-End Testing Accounts Card */}
-        <Card className="border-2 border-[var(--btn-bg)] bg-[var(--surface)] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="coral">Pintasan Testing E2E</Badge>
-                <span className="text-xs text-[var(--text-2)]">
-                  Terhubung ke tabel User di PostgreSQL Laragon
-                </span>
-              </div>
-              <h2 className="mt-1.5 font-display text-xl font-bold">
-                Pilih skenario akun dengan 1 klik
-              </h2>
-              <p className="text-sm text-[var(--text-2)]">
-                Pilih <strong>Pelajar Baru</strong> untuk menguji alur dari
-                Tujuan Belajar (`/mulai`), atau <strong>Pelajar Aktif</strong>{" "}
-                untuk langsung masuk ke Beranda (`/`).
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-            {testingUsers.map((u) => {
-              const isFresh = !u.onboardingCompleted;
-              const isCurrent = u.id === currentUserId;
-              return (
-                <div
-                  key={u.id}
-                  className={cn(
-                    "flex flex-col justify-between gap-3 rounded-control border-2 p-4 transition-all",
-                    isFresh
-                      ? "border-[var(--coral)] bg-[var(--tile-coral)]/45"
-                      : "border-[var(--line)] bg-[var(--bg)]"
-                  )}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "grid h-9 w-9 place-items-center rounded-full font-display text-xs font-extrabold",
-                            isFresh
-                              ? "bg-[var(--coral)] text-[var(--on-coral)]"
-                              : "bg-[var(--teal-800)] text-[#F7F5EE]"
-                          )}
-                        >
-                          {u.initials}
-                        </span>
-                        <div>
-                          <p className="font-display text-base font-bold leading-tight">
-                            {u.name}
-                          </p>
-                          <p className="text-xs text-[var(--text-2)]">
-                            {u.email}
-                          </p>
-                        </div>
-                      </span>
-                      {isCurrent && (
-                        <Badge variant="ok">
-                          <Check className="h-3 w-3" />
-                          <span>Aktif</span>
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="mt-3 space-y-1 text-xs text-[var(--text)]">
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        {isFresh
-                          ? "Akun Baru (0 menit, belum onboarding)"
-                          : `Aktif (${u.spokenTodayMinutes}/${u.dailyTargetMinutes} mnt, streak ${u.streakDays} hari)`}
-                      </p>
-                      <p>
-                        <strong>Arah setelah klik:</strong>{" "}
-                        {isFresh
-                          ? "Buka /mulai -> /cek-mikrofon -> Latihan"
-                          : "Langsung buka Beranda (/)"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant={isFresh ? "accent" : "default"}
-                    size="sm"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin(u)}
-                    className="w-full"
-                  >
-                    <UserCheck className="h-4 w-4" aria-hidden="true" />
-                    <span>
-                      {isFresh
-                        ? "Uji Alur dari Awal (/mulai)"
-                        : "Masuk ke Beranda (Alya B1)"}
-                    </span>
-                  </Button>
+        {/* Pintasan akun testing: hanya dirender saat ENABLE_TEST_ACCOUNTS aktif di mode development */}
+        {showTestAccounts && (
+          <Card className="border-2 border-[var(--btn-bg)] bg-[var(--surface)] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="coral">Pintasan Testing E2E</Badge>
+                  <span className="text-xs text-[var(--text-2)]">
+                    Terhubung ke tabel User di PostgreSQL Laragon
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+                <h2 className="mt-1.5 font-display text-xl font-bold">
+                  Pilih skenario akun dengan 1 klik
+                </h2>
+                <p className="text-sm text-[var(--text-2)]">
+                  Pilih <strong>Pelajar Baru</strong> untuk menguji alur dari
+                  Tujuan Belajar (`/mulai`), atau <strong>Pelajar Aktif</strong>{" "}
+                  untuk langsung masuk ke Beranda (`/`). Hanya muncul di mode
+                  pengembangan; akunnya diatur di <code>.env.local</code>.
+                </p>
+              </div>
+            </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3.5">
-            <p className="text-xs text-[var(--text-2)]">
-              Ingin mengulang testing dari kondisi database bersih?
-            </p>
-            <Button
-              type="button"
-              variant="surface"
-              size="sm"
-              disabled={loading}
-              onClick={() => handleResetDatabase("learner-baru")}
-            >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Reset Data Laragon & Mulai dari Nol</span>
-            </Button>
-          </div>
+            <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              {testingUsers.map((u) => {
+                const isFresh = !u.onboardingCompleted;
+                const isCurrent = u.id === currentUserId;
+                return (
+                  <div
+                    key={u.id}
+                    className={cn(
+                      "flex flex-col justify-between gap-3 rounded-control border-2 p-4 transition-all",
+                      isFresh
+                        ? "border-[var(--coral)] bg-[var(--tile-coral)]/45"
+                        : "border-[var(--line)] bg-[var(--bg)]"
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "grid h-9 w-9 place-items-center rounded-full font-display text-xs font-extrabold",
+                              isFresh
+                                ? "bg-[var(--coral)] text-[var(--on-coral)]"
+                                : "bg-[var(--teal-800)] text-[#F7F5EE]"
+                            )}
+                          >
+                            {u.initials}
+                          </span>
+                          <div>
+                            <p className="font-display text-base font-bold leading-tight">
+                              {u.name}
+                            </p>
+                            <p className="text-xs text-[var(--text-2)]">
+                              {u.email}
+                            </p>
+                          </div>
+                        </span>
+                        {isCurrent && (
+                          <Badge variant="ok">
+                            <Check className="h-3 w-3" />
+                            <span>Aktif</span>
+                          </Badge>
+                        )}
+                      </div>
 
-          {resetMsg && (
-            <p
-              role="status"
-              className="mt-2.5 rounded-control bg-[var(--ok-wash)] px-3 py-2 text-xs font-bold text-[var(--ok)]"
-            >
-              {resetMsg}
-            </p>
-          )}
-        </Card>
+                      <div className="mt-3 space-y-1 text-xs text-[var(--text)]">
+                        <p>
+                          <strong>Status:</strong>{" "}
+                          {isFresh
+                            ? "Akun Baru (0 menit, belum onboarding)"
+                            : `Aktif (${u.spokenTodayMinutes}/${u.dailyTargetMinutes} mnt, streak ${u.streakDays} hari)`}
+                        </p>
+                        <p>
+                          <strong>Arah setelah klik:</strong>{" "}
+                          {isFresh
+                            ? "Buka /mulai -> /cek-mikrofon -> Latihan"
+                            : "Langsung buka Beranda (/)"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant={isFresh ? "accent" : "default"}
+                      size="sm"
+                      disabled={loading}
+                      onClick={() => handleQuickLogin(u)}
+                      className="w-full"
+                    >
+                      <UserCheck className="h-4 w-4" aria-hidden="true" />
+                      <span>
+                        {isFresh
+                          ? "Uji Alur dari Awal (/mulai)"
+                          : "Masuk ke Beranda (Alya B1)"}
+                      </span>
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3.5">
+              <p className="text-xs text-[var(--text-2)]">
+                Ingin mengulang testing dari kondisi database bersih?
+              </p>
+              <Button
+                type="button"
+                variant="surface"
+                size="sm"
+                disabled={loading}
+                onClick={() => handleResetDatabase(TEST_ACCOUNT_FRESH_ID)}
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Reset Data Laragon & Mulai dari Nol</span>
+              </Button>
+            </div>
+
+            {resetMsg && (
+              <p
+                role="status"
+                className="mt-2.5 rounded-control bg-[var(--ok-wash)] px-3 py-2 text-xs font-bold text-[var(--ok)]"
+              >
+                {resetMsg}
+              </p>
+            )}
+          </Card>
+        )}
 
         {/* Manual Login / Register Form Card */}
         <Card className="p-6">
@@ -411,6 +431,7 @@ export function LoginWorkspace({
                   setMode("register");
                   setErrorMsg(null);
                   setEmail("");
+                  setPassword("");
                 }}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-[9px] px-4 py-2 text-sm font-bold transition-colors",
@@ -423,10 +444,6 @@ export function LoginWorkspace({
                 <span>Daftar Akun Baru</span>
               </button>
             </div>
-
-            <span className="text-xs text-[var(--text-2)]">
-              Sandi default akun testing: <code>ucapin123</code>
-            </span>
           </div>
 
           {errorMsg && (
@@ -448,7 +465,8 @@ export function LoginWorkspace({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="baru@ucapin.id atau alya@ucapin.id"
+                  autoComplete="email"
+                  placeholder="nama@email.com"
                 />
               </div>
 
@@ -457,6 +475,7 @@ export function LoginWorkspace({
                 <Input
                   id="login-password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -464,31 +483,7 @@ export function LoginWorkspace({
                 />
               </div>
 
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail("baru@ucapin.id");
-                      setPassword("ucapin123");
-                    }}
-                    className="font-semibold text-[var(--link)] underline"
-                  >
-                    Isi email Pelajar Baru
-                  </button>
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEmail("alya@ucapin.id");
-                      setPassword("ucapin123");
-                    }}
-                    className="font-semibold text-[var(--link)] underline"
-                  >
-                    Isi email Alya (B1)
-                  </button>
-                </div>
-
+              <div className="mt-2 flex justify-end">
                 <Button type="submit" disabled={loading}>
                   <span>{loading ? "Memproses..." : "Masuk Sekarang"}</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -514,6 +509,7 @@ export function LoginWorkspace({
                 <Input
                   id="reg-email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -526,10 +522,12 @@ export function LoginWorkspace({
                 <Input
                   id="reg-password"
                   type="password"
+                  autoComplete="new-password"
+                  minLength={8}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
+                  placeholder="Minimal 8 karakter"
                 />
               </div>
 

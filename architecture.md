@@ -33,10 +33,10 @@ c:\My things\Project\Ucapin\
 │   ├── app/                        # Next.js App Router (HANYA routing & API endpoints)
 │   │   ├── api/v1/
 │   │   │   ├── auth/
-│   │   │   │   ├── login/route.ts    # POST autentikasi email/sandi atau 1-klik akun testing (set HTTP-only cookie)
-│   │   │   │   ├── register/route.ts # POST daftar akun pelajar baru (onboardingCompleted=false)
+│   │   │   │   ├── login/route.ts    # POST email + sandi (wajib), atau 1-klik akun testing khusus mode development
+│   │   │   │   ├── register/route.ts # POST daftar akun baru; sandi min. 8 karakter, email terdaftar ditolak (409)
 │   │   │   │   ├── logout/route.ts   # POST hapus session cookie
-│   │   │   │   └── reset/route.ts    # POST reset database Laragon ke kondisi awal testing
+│   │   │   │   └── reset/route.ts    # POST reset data testing; 404 di luar mode development
 │   │   │   ├── dashboard/route.ts  # GET data Beranda dari PostgreSQL
 │   │   │   ├── mistakes/route.ts   # GET & POST item Bank Kesalahan (auto-upsert)
 │   │   │   ├── onboarding/route.ts # PATCH tujuan, CEFR, target menit, koreksi, opt-in UU PDP
@@ -72,8 +72,13 @@ c:\My things\Project\Ucapin\
 │   │   ├── roleplay/roleplay-workspace.tsx
 │   │   └── session-result/session-result-workspace.tsx
 │   ├── lib/utils.ts                # Helper cn(), speakEnglish(), mapMicError()
+│   ├── middleware.ts               # Tanpa cookie sesi: halaman → /masuk, API → 401
 │   ├── server/
 │   │   ├── db.ts                   # Singleton PrismaClient
+│   │   ├── password.ts             # Hash sandi scrypt (node:crypto) + verifikasi timing-safe
+│   │   ├── session.ts              # Cookie sesi bertanda tangan HMAC (SESSION_SECRET), kedaluwarsa 30 hari
+│   │   ├── test-accounts.ts        # Id akun testing + baca email/sandi testing dari env
+│   │   ├── seed-data.ts            # Isi data awal (dipakai seed & reset)
 │   │   └── repositories/ucapin-repository.ts # Query & mutasi terpusat ke Laragon PostgreSQL
 │   └── types/ucapin.ts             # Kontrak DTO TypeScript
 └── prototype/                      # Prototipe statis HTML/CSS/JS awal
@@ -90,6 +95,13 @@ c:\My things\Project\Ucapin\
 3. **Bank Kesalahan (`/bank-kesalahan` & kartu di `/`)**:
    - Menampilkan seluruh kata yang tersimpan di tabel `MistakeItem` diurutkan berdasarkan frekuensi kemunculan (`occurrenceCount`), lengkap dengan filter status dan tombol latihan ulang.
 
-## 5. Privasi & kepatuhan (UU PDP 27/2022)
+## 5. Autentikasi & kredensial
+- **Tidak ada email/sandi di kode, seed, default schema, atau teks UI.** Akun testing dibaca dari env: `TEST_ACCOUNT_NEW_EMAIL`, `TEST_ACCOUNT_ACTIVE_EMAIL`, `TEST_ACCOUNT_PASSWORD`. Seed berhenti sebelum menghapus data jika salah satunya kosong.
+- Sandi disimpan di kolom `User.passwordHash` (scrypt + salt acak). Migrasi `20261121090000_hash_user_passwords` mengosongkan sandi teks lama, jadi database lama perlu `npm run db:reset`.
+- Sesi: cookie HTTP-only `ucapin_session` berisi `userId.kedaluwarsa.tandaTangan` (HMAC-SHA256 dengan `SESSION_SECRET`). Cookie tanpa tanda tangan valid diperlakukan sebagai belum masuk; tidak ada lagi fallback ke akun default.
+- Pintasan 1-klik dan `POST /api/v1/auth/reset` hanya aktif bila `NODE_ENV !== "production"` dan `ENABLE_TEST_ACCOUNTS="true"`, dan hanya untuk id akun testing.
+- File env: Next.js membaca `.env` lalu `.env.local`; Prisma CLI hanya `.env`; script `db:seed`/`db:reset`/`db:setup` membaca keduanya lewat `tsx --env-file-if-exists`. Rahasia ditaruh di `.env.local`; contoh kosong di `.env.example`.
+
+## 6. Privasi & kepatuhan (UU PDP 27/2022)
 - Rekaman suara = data pribadi. Default `saveAudioOptIn = false` di tabel `User`: audio diproses di memori dan tidak disimpan.
 - Pengguna dapat mengubah preferensi `saveAudioOptIn` dan `correctionPref` (`giliran` vs `akhir`) di `/cek-mikrofon`, yang langsung disimpan ke tabel `User` lewat `PATCH /api/v1/onboarding`.

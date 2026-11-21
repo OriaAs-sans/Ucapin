@@ -3,6 +3,7 @@ import {
   getAllTestingUsers,
   getSessionUserId,
 } from "@/server/repositories/ucapin-repository";
+import { testAccountsEnabled } from "@/server/test-accounts";
 import { LoginWorkspace } from "@/features/auth/login-workspace";
 
 export const dynamic = "force-dynamic";
@@ -10,18 +11,20 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Masuk atau Daftar · Ucapin",
   description:
-    "Masuk ke akun Ucapin atau pilih akun testing untuk mencoba alur latihan speaking dari awal sampai akhir.",
+    "Masuk ke akun Ucapin atau daftar akun baru untuk mulai latihan speaking.",
 };
 
 export default async function MasukPage() {
+  const showTestAccounts = testAccountsEnabled();
   const [testingUsers, currentUserId] = await Promise.all([
-    getAllTestingUsers(),
+    showTestAccounts ? getAllTestingUsers() : Promise.resolve([]),
     getSessionUserId(),
   ]);
   return (
     <LoginWorkspace
       testingUsers={testingUsers}
-      currentUserId={currentUserId}
+      showTestAccounts={showTestAccounts}
+      currentUserId={currentUserId ?? undefined}
     />
   );
 }

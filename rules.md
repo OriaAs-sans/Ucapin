@@ -47,6 +47,7 @@ Jangan pernah membuat folder baru di luar struktur standar berikut tanpa persetu
 
 ## 7. Keamanan & privasi
 - Jangan pernah menulis API key/secret ke file yang ter-track git. Pakai `.env.local` (sudah di-ignore) dan sediakan `.env.example` tanpa nilai asli.
+- **Dilarang hardcode email + sandi dalam bentuk apa pun**, termasuk akun testing palsu: tidak di kode, seed, default schema/migrasi, placeholder, maupun teks UI. Baca dari env (lihat architecture.md § 5). Sandi hanya disimpan sebagai hash. Sebelum menyiapkan pesan commit, grep `password`, `sandi`, dan literal email.
 - Rekaman suara pengguna adalah data pribadi (UU PDP). Default: tidak disimpan; hanya disimpan jika pengguna opt-in. Lihat architecture.md § Privasi.
 
 ## 8. Antislop wajib

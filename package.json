@@ -10,11 +10,11 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev --skip-generate",
-    "db:reset": "prisma migrate reset --force --skip-generate && tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset --force --skip-generate && tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed.ts",
     "db:push": "prisma db push --skip-generate",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:setup": "prisma migrate deploy && tsx prisma/seed.ts"
+    "db:setup": "prisma migrate deploy && tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

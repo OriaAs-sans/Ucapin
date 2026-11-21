@@ -12,16 +12,16 @@
     "semantic_hash": "a45681392a531803b11f58f565623f3f"
   },
   "architecture.md": {
-    "mtime": 1795193392.9294753,
-    "seen": 1795193429.9523177,
-    "ast_hash": "101567ed2c7dda75eeaeb443e268ff52",
-    "semantic_hash": "101567ed2c7dda75eeaeb443e268ff52"
+    "mtime": 1795228425.631457,
+    "seen": 1795228540.8865666,
+    "ast_hash": "7f5053e9160862f04ba2717ab4b79b7b",
+    "semantic_hash": "7f5053e9160862f04ba2717ab4b79b7b"
   },
   "design.md": {
-    "mtime": 1795193393.8005445,
-    "seen": 1795193429.9523177,
-    "ast_hash": "60d7adc7ea7f1a2ea137f399de1e10b6",
-    "semantic_hash": "60d7adc7ea7f1a2ea137f399de1e10b6"
+    "mtime": 1795228488.3542848,
+    "seen": 1795228540.8865666,
+    "ast_hash": "1fb72f62b8aeb035176f869c1586975c",
+    "semantic_hash": "1fb72f62b8aeb035176f869c1586975c"
   },
   "reports/Konsep website speaking bahasa Inggris.md": {
     "mtime": 1795186666.5861983,
@@ -48,10 +48,10 @@
     "semantic_hash": "60e55c59167f161c70a71949ceb807d6"
   },
   "rules.md": {
-    "mtime": 1795191825.495951,
-    "seen": 1795191925.527704,
-    "ast_hash": "ec8aa153f42ae6a5ec971e1b1949af81",
-    "semantic_hash": "ec8aa153f42ae6a5ec971e1b1949af81"
+    "mtime": 1795228425.6327124,
+    "seen": 1795228540.8865666,
+    "ast_hash": "af32393598f1f40397870a68d1d2ddb8",
+    "semantic_hash": "af32393598f1f40397870a68d1d2ddb8"
   },
   ".claude/launch.json": {
     "mtime": 1795188227.884382,
@@ -113,41 +113,11 @@
     "ast_hash": "0e9ce19c90d5df5f1cb27cdcb999d2ed",
     "semantic_hash": "0e9ce19c90d5df5f1cb27cdcb999d2ed"
   },
-  ".taste-skill/build.done.json": {
-    "mtime": 1795189815.2907434,
-    "seen": 1795191925.5266917,
-    "ast_hash": "30da5ffcf92810ac8342df97caaa2675",
-    "semantic_hash": "30da5ffcf92810ac8342df97caaa2675"
-  },
-  ".taste-skill/gate-blocks.json": {
-    "mtime": 1795189941.6324594,
-    "seen": 1795191925.5266917,
-    "ast_hash": "9a8575c5c6a66690f3fed964e800d569",
-    "semantic_hash": "9a8575c5c6a66690f3fed964e800d569"
-  },
-  ".taste-skill/gate.json": {
-    "mtime": 1795189966.235,
-    "seen": 1795191925.5266917,
-    "ast_hash": "cf9a0894929ce21714e5f53b89555798",
-    "semantic_hash": "cf9a0894929ce21714e5f53b89555798"
-  },
-  ".taste-skill/gate/consistency/report.json": {
-    "mtime": 1795189885.5978878,
-    "seen": 1795191925.5266917,
-    "ast_hash": "01ea44d931a22d057b69f576d943c9dc",
-    "semantic_hash": "01ea44d931a22d057b69f576d943c9dc"
-  },
   "components.json": {
     "mtime": 1795191027.2540143,
     "seen": 1795191925.5266917,
     "ast_hash": "5c01b8ec5c16aeb52bcfc697401c30f0",
     "semantic_hash": "5c01b8ec5c16aeb52bcfc697401c30f0"
-  },
-  "next-env.d.ts": {
-    "mtime": 1795191860.3854961,
-    "seen": 1795191925.5266917,
-    "ast_hash": "90426577ad8f38459f3e566411c85589",
-    "semantic_hash": "90426577ad8f38459f3e566411c85589"
   },
   "next.config.ts": {
     "mtime": 1795195312.0391011,
@@ -156,10 +126,10 @@
     "semantic_hash": "b604eceaa8e0e0e5d3718f34548fe689"
   },
   "package.json": {
-    "mtime": 1795194747.1758666,
-    "seen": 1795195390.429651,
-    "ast_hash": "94cb21e25a1bed7f83818a2c9c6becc5",
-    "semantic_hash": "94cb21e25a1bed7f83818a2c9c6becc5"
+    "mtime": 1795228375.3600707,
+    "seen": 1795228540.8865666,
+    "ast_hash": "7192ac36c24f0bd36090ece938922ad9",
+    "semantic_hash": "7192ac36c24f0bd36090ece938922ad9"
   },
   "postcss.config.mjs": {
     "mtime": 1795191026.3174255,
@@ -198,10 +168,10 @@
     "semantic_hash": "8c6eb3e6b2cab23e29867ee69fcaa096"
   },
   "src/app/api/v1/onboarding/route.ts": {
-    "mtime": 1795195317.7913225,
-    "seen": 1795195390.429651,
-    "ast_hash": "aeaf31698ba79d8c6ddca0e4b82e9bf3",
-    "semantic_hash": "aeaf31698ba79d8c6ddca0e4b82e9bf3"
+    "mtime": 1795228303.2497437,
+    "seen": 1795228540.8865666,
+    "ast_hash": "5b60083ea1f479151a78d577a68010ec",
+    "semantic_hash": "5b60083ea1f479151a78d577a68010ec"
   },
   "src/app/api/v1/session-result/route.ts": {
     "mtime": 1795191582.9107974,
@@ -246,10 +216,10 @@
     "semantic_hash": "1652941be21c1480d84c3163a8283c77"
   },
   "src/app/page.tsx": {
-    "mtime": 1795194341.5454488,
-    "seen": 1795194483.8436024,
-    "ast_hash": "0fd853047e572833780672936ab3424d",
-    "semantic_hash": "0fd853047e572833780672936ab3424d"
+    "mtime": 1795228303.0555682,
+    "seen": 1795228540.8865666,
+    "ast_hash": "67d987be7c47c78007dd28d5913d39fe",
+    "semantic_hash": "67d987be7c47c78007dd28d5913d39fe"
   },
   "src/app/roleplay/page.tsx": {
     "mtime": 1795193343.6293416,
@@ -408,10 +378,10 @@
     "semantic_hash": "606fffb8f68d774864722adfa5b16b8e"
   },
   "src/server/repositories/ucapin-repository.ts": {
-    "mtime": 1795194339.4706924,
-    "seen": 1795194483.8436024,
-    "ast_hash": "ffa24ff35891b8a75e25adae3d0ebcae",
-    "semantic_hash": "ffa24ff35891b8a75e25adae3d0ebcae"
+    "mtime": 1795228284.7012105,
+    "seen": 1795228540.8865666,
+    "ast_hash": "a6a785958151c645c96d64feecc34d43",
+    "semantic_hash": "a6a785958151c645c96d64feecc34d43"
   },
   "src/types/ucapin.ts": {
     "mtime": 1795193093.234434,
@@ -437,378 +407,6 @@
     "ast_hash": "531eb2340b31a28b906d325637da051f",
     "semantic_hash": "531eb2340b31a28b906d325637da051f"
   },
-  ".taste-skill/gate/consistency/rendered.html": {
-    "mtime": 1795189822.546129,
-    "seen": 1795191925.527704,
-    "ast_hash": "5fdd7852736ba46d3712f6abc3ffa422",
-    "semantic_hash": "5fdd7852736ba46d3712f6abc3ffa422"
-  },
-  ".taste-skill/gate/consistency/1440-01-hero-fill.jpg": {
-    "mtime": 1795189837.3611338,
-    "seen": 1795191925.527704,
-    "ast_hash": "19ec989b39cd4440304a12ce53cf695c",
-    "semantic_hash": "19ec989b39cd4440304a12ce53cf695c"
-  },
-  ".taste-skill/gate/consistency/1440-02-no-visual.jpg": {
-    "mtime": 1795189837.3765008,
-    "seen": 1795191925.527704,
-    "ast_hash": "d188f630cb72f56b561b7ca1d8c851d3",
-    "semantic_hash": "d188f630cb72f56b561b7ca1d8c851d3"
-  },
-  ".taste-skill/gate/consistency/1440-03-button-styles.jpg": {
-    "mtime": 1795189837.3855052,
-    "seen": 1795191925.527704,
-    "ast_hash": "6d3fe67cf364e5781a111950fad4b2d6",
-    "semantic_hash": "6d3fe67cf364e5781a111950fad4b2d6"
-  },
-  ".taste-skill/gate/consistency/1440-04-cta.jpg": {
-    "mtime": 1795189837.3965838,
-    "seen": 1795191925.527704,
-    "ast_hash": "411bd6fc03bbeaad5ebfb98ede71574e",
-    "semantic_hash": "411bd6fc03bbeaad5ebfb98ede71574e"
-  },
-  ".taste-skill/gate/consistency/1440-05-copy-headline.jpg": {
-    "mtime": 1795189837.4068272,
-    "seen": 1795191925.527704,
-    "ast_hash": "66f7c79a2bb2c59f21002de346b602ed",
-    "semantic_hash": "66f7c79a2bb2c59f21002de346b602ed"
-  },
-  ".taste-skill/gate/consistency/1440-06-heading-scale.jpg": {
-    "mtime": 1795189837.4183452,
-    "seen": 1795191925.527704,
-    "ast_hash": "68b225e27ebf1e8e5102686935327a98",
-    "semantic_hash": "68b225e27ebf1e8e5102686935327a98"
-  },
-  ".taste-skill/gate/consistency/1440-07-heading-scale.jpg": {
-    "mtime": 1795189837.4297276,
-    "seen": 1795191925.527704,
-    "ast_hash": "856b27522294ec6a0bd3ff5c1b2bc23d",
-    "semantic_hash": "856b27522294ec6a0bd3ff5c1b2bc23d"
-  },
-  ".taste-skill/gate/consistency/1440-08-fold-card.jpg": {
-    "mtime": 1795189837.4516635,
-    "seen": 1795191925.527704,
-    "ast_hash": "237caaf35ff44072aa0ca6ea2137e45d",
-    "semantic_hash": "237caaf35ff44072aa0ca6ea2137e45d"
-  },
-  ".taste-skill/gate/consistency/1440-09-overlap-text.jpg": {
-    "mtime": 1795189837.4742537,
-    "seen": 1795191925.527704,
-    "ast_hash": "81b6ec2b800dc19fbc5a417a6dc4b7bb",
-    "semantic_hash": "81b6ec2b800dc19fbc5a417a6dc4b7bb"
-  },
-  ".taste-skill/gate/consistency/1440-10-copy-buttons.jpg": {
-    "mtime": 1795189837.4865277,
-    "seen": 1795191925.527704,
-    "ast_hash": "cf08e4e4d2450eedf190a4411f2db086",
-    "semantic_hash": "cf08e4e4d2450eedf190a4411f2db086"
-  },
-  ".taste-skill/gate/consistency/1440-11-copy-actions.jpg": {
-    "mtime": 1795189837.5052059,
-    "seen": 1795191925.527704,
-    "ast_hash": "6d3fe67cf364e5781a111950fad4b2d6",
-    "semantic_hash": "6d3fe67cf364e5781a111950fad4b2d6"
-  },
-  ".taste-skill/gate/consistency/1440-12-off-grid.jpg": {
-    "mtime": 1795189837.5161512,
-    "seen": 1795191925.527704,
-    "ast_hash": "856b27522294ec6a0bd3ff5c1b2bc23d",
-    "semantic_hash": "856b27522294ec6a0bd3ff5c1b2bc23d"
-  },
-  ".taste-skill/gate/consistency/1440-13-one-screen.jpg": {
-    "mtime": 1795189837.5396605,
-    "seen": 1795191925.527704,
-    "ast_hash": "d188f630cb72f56b561b7ca1d8c851d3",
-    "semantic_hash": "d188f630cb72f56b561b7ca1d8c851d3"
-  },
-  ".taste-skill/gate/consistency/1440-14-hero-enter.jpg": {
-    "mtime": 1795189837.556665,
-    "seen": 1795191925.527704,
-    "ast_hash": "ed3f970320cfedee973358d46c36a20f",
-    "semantic_hash": "ed3f970320cfedee973358d46c36a20f"
-  },
-  ".taste-skill/gate/consistency/1440-15-flush.jpg": {
-    "mtime": 1795189837.578634,
-    "seen": 1795191925.527704,
-    "ast_hash": "d7bd49552188694f12913b0c8c47e5bd",
-    "semantic_hash": "d7bd49552188694f12913b0c8c47e5bd"
-  },
-  ".taste-skill/gate/consistency/1440-16-flush.jpg": {
-    "mtime": 1795189837.590395,
-    "seen": 1795191925.527704,
-    "ast_hash": "a6575f4c301e36efa506a1a23ff9712a",
-    "semantic_hash": "a6575f4c301e36efa506a1a23ff9712a"
-  },
-  ".taste-skill/gate/consistency/1440-17-flush.jpg": {
-    "mtime": 1795189837.611424,
-    "seen": 1795191925.527704,
-    "ast_hash": "71c90a1b81f059ec7c286950b859f061",
-    "semantic_hash": "71c90a1b81f059ec7c286950b859f061"
-  },
-  ".taste-skill/gate/consistency/1440-18-copy-headings.jpg": {
-    "mtime": 1795189837.6222458,
-    "seen": 1795191925.527704,
-    "ast_hash": "707e7d7868d63d23fa1d25b62bcecd37",
-    "semantic_hash": "707e7d7868d63d23fa1d25b62bcecd37"
-  },
-  ".taste-skill/gate/consistency/1440-19-stagger.jpg": {
-    "mtime": 1795189837.6411896,
-    "seen": 1795191925.527704,
-    "ast_hash": "2658aaff5cfb44ea2c820fb5a235c355",
-    "semantic_hash": "2658aaff5cfb44ea2c820fb5a235c355"
-  },
-  ".taste-skill/gate/consistency/1440-20-off-grid.jpg": {
-    "mtime": 1795189837.6519506,
-    "seen": 1795191925.527704,
-    "ast_hash": "707e7d7868d63d23fa1d25b62bcecd37",
-    "semantic_hash": "707e7d7868d63d23fa1d25b62bcecd37"
-  },
-  ".taste-skill/gate/consistency/1440-21-section-gaps.jpg": {
-    "mtime": 1795189837.6764903,
-    "seen": 1795191925.527704,
-    "ast_hash": "59c8fdd713fad3cd66128c6baf8ca921",
-    "semantic_hash": "59c8fdd713fad3cd66128c6baf8ca921"
-  },
-  ".taste-skill/gate/consistency/1440-22-pinned.jpg": {
-    "mtime": 1795189837.7077546,
-    "seen": 1795191925.527704,
-    "ast_hash": "388a922eac32dae6474a76b94227e35a",
-    "semantic_hash": "388a922eac32dae6474a76b94227e35a"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-01-hero-screen.jpg": {
-    "mtime": 1795189847.0275512,
-    "seen": 1795191925.527704,
-    "ast_hash": "5ced8cac966d6cb66a5c0f645405ca88",
-    "semantic_hash": "5ced8cac966d6cb66a5c0f645405ca88"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-02-section-height.jpg": {
-    "mtime": 1795189847.3992417,
-    "seen": 1795191925.527704,
-    "ast_hash": "bb94cfc3c2d303416a1b1221127d0744",
-    "semantic_hash": "bb94cfc3c2d303416a1b1221127d0744"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-03-one-section.jpg": {
-    "mtime": 1795189847.4309726,
-    "seen": 1795191925.527704,
-    "ast_hash": "25afc124c7863d321b67ecf5de40a804",
-    "semantic_hash": "25afc124c7863d321b67ecf5de40a804"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-04-one-heading.jpg": {
-    "mtime": 1795189847.4546566,
-    "seen": 1795191925.527704,
-    "ast_hash": "55cbddb8a843d9a8d488c95e64825622",
-    "semantic_hash": "55cbddb8a843d9a8d488c95e64825622"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-05-container-edges.jpg": {
-    "mtime": 1795189847.4754887,
-    "seen": 1795191925.527704,
-    "ast_hash": "9b3283e9c3df59c5a08cfb680de44971",
-    "semantic_hash": "9b3283e9c3df59c5a08cfb680de44971"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-06-row-lines.jpg": {
-    "mtime": 1795189847.5006518,
-    "seen": 1795191925.527704,
-    "ast_hash": "afdf63fac0f1093edbf2f4fd0a479248",
-    "semantic_hash": "afdf63fac0f1093edbf2f4fd0a479248"
-  },
-  ".taste-skill/gate/consistency/1440-rhythm-07-split-pair.jpg": {
-    "mtime": 1795189847.5250888,
-    "seen": 1795191925.527704,
-    "ast_hash": "38fcee88aa2da4dae0bef32c348d86f2",
-    "semantic_hash": "38fcee88aa2da4dae0bef32c348d86f2"
-  },
-  ".taste-skill/gate/consistency/390-01-hero-fill.jpg": {
-    "mtime": 1795189865.0481873,
-    "seen": 1795191925.527704,
-    "ast_hash": "536111e52ed4e43bb8f179e3594f306c",
-    "semantic_hash": "536111e52ed4e43bb8f179e3594f306c"
-  },
-  ".taste-skill/gate/consistency/390-02-nav.jpg": {
-    "mtime": 1795189865.0542495,
-    "seen": 1795191925.527704,
-    "ast_hash": "85370803691230eab160f6ae9206853b",
-    "semantic_hash": "85370803691230eab160f6ae9206853b"
-  },
-  ".taste-skill/gate/consistency/390-03-button-styles.jpg": {
-    "mtime": 1795189865.0578673,
-    "seen": 1795191925.527704,
-    "ast_hash": "99e64ccba97a3ea362c0af67edd0ac80",
-    "semantic_hash": "99e64ccba97a3ea362c0af67edd0ac80"
-  },
-  ".taste-skill/gate/consistency/390-04-cta.jpg": {
-    "mtime": 1795189865.064599,
-    "seen": 1795191925.527704,
-    "ast_hash": "0022073b35932178476724a0d7e75645",
-    "semantic_hash": "0022073b35932178476724a0d7e75645"
-  },
-  ".taste-skill/gate/consistency/390-05-heading-scale.jpg": {
-    "mtime": 1795189865.0720603,
-    "seen": 1795191925.527704,
-    "ast_hash": "cea618c2f1f93d25dc92c46eb1ef07f8",
-    "semantic_hash": "cea618c2f1f93d25dc92c46eb1ef07f8"
-  },
-  ".taste-skill/gate/consistency/390-06-heading-scale.jpg": {
-    "mtime": 1795189865.0808032,
-    "seen": 1795191925.527704,
-    "ast_hash": "cea618c2f1f93d25dc92c46eb1ef07f8",
-    "semantic_hash": "cea618c2f1f93d25dc92c46eb1ef07f8"
-  },
-  ".taste-skill/gate/consistency/390-07-off-grid.jpg": {
-    "mtime": 1795189865.0880735,
-    "seen": 1795191925.527704,
-    "ast_hash": "b39f2950da4a8fa7a145058099e7692d",
-    "semantic_hash": "b39f2950da4a8fa7a145058099e7692d"
-  },
-  ".taste-skill/gate/consistency/390-08-tap-size.jpg": {
-    "mtime": 1795189865.0953894,
-    "seen": 1795191925.527704,
-    "ast_hash": "6e679573ff78861998c3896c2194f9e9",
-    "semantic_hash": "6e679573ff78861998c3896c2194f9e9"
-  },
-  ".taste-skill/gate/consistency/390-09-tap-size.jpg": {
-    "mtime": 1795189865.1012394,
-    "seen": 1795191925.527704,
-    "ast_hash": "7eaf669ecf4957e01953a1004a7442e5",
-    "semantic_hash": "7eaf669ecf4957e01953a1004a7442e5"
-  },
-  ".taste-skill/gate/consistency/390-10-no-visual.jpg": {
-    "mtime": 1795189865.116599,
-    "seen": 1795191925.527704,
-    "ast_hash": "612023754a62afc4e43712a2d4212cd7",
-    "semantic_hash": "612023754a62afc4e43712a2d4212cd7"
-  },
-  ".taste-skill/gate/consistency/390-11-heading-scale.jpg": {
-    "mtime": 1795189865.1299837,
-    "seen": 1795191925.527704,
-    "ast_hash": "0aaa99c03e5208debc4dda56f244f871",
-    "semantic_hash": "0aaa99c03e5208debc4dda56f244f871"
-  },
-  ".taste-skill/gate/consistency/390-12-overlap-text.jpg": {
-    "mtime": 1795189865.1375248,
-    "seen": 1795191925.527704,
-    "ast_hash": "0d0a6247540c5bdbdd340895aa52ced6",
-    "semantic_hash": "0d0a6247540c5bdbdd340895aa52ced6"
-  },
-  ".taste-skill/gate/consistency/390-13-tap-size.jpg": {
-    "mtime": 1795189865.1455379,
-    "seen": 1795191925.527704,
-    "ast_hash": "51b55bc6c0fa2b68ce82522fe27768df",
-    "semantic_hash": "51b55bc6c0fa2b68ce82522fe27768df"
-  },
-  ".taste-skill/gate/consistency/390-14-heading-scale.jpg": {
-    "mtime": 1795189865.1516519,
-    "seen": 1795191925.527704,
-    "ast_hash": "d8539f16b6b1d115c25d4b4df5394f09",
-    "semantic_hash": "d8539f16b6b1d115c25d4b4df5394f09"
-  },
-  ".taste-skill/gate/consistency/390-15-flush.jpg": {
-    "mtime": 1795189865.1634843,
-    "seen": 1795191925.527704,
-    "ast_hash": "92fce3a6f4022cd2b2dd8814e9bc3a45",
-    "semantic_hash": "92fce3a6f4022cd2b2dd8814e9bc3a45"
-  },
-  ".taste-skill/gate/consistency/390-16-no-visual.jpg": {
-    "mtime": 1795189865.1759381,
-    "seen": 1795191925.527704,
-    "ast_hash": "1ad4b14ff93f3636ba6af5c66a9804cd",
-    "semantic_hash": "1ad4b14ff93f3636ba6af5c66a9804cd"
-  },
-  ".taste-skill/gate/consistency/390-17-tap-size.jpg": {
-    "mtime": 1795189865.183683,
-    "seen": 1795191925.527704,
-    "ast_hash": "bfa0a9ef984888e13766186a4bd44cd4",
-    "semantic_hash": "bfa0a9ef984888e13766186a4bd44cd4"
-  },
-  ".taste-skill/gate/consistency/390-18-tap-size.jpg": {
-    "mtime": 1795189865.1899323,
-    "seen": 1795191925.527704,
-    "ast_hash": "424d40391fa2e301a3e354f7b4a28ac1",
-    "semantic_hash": "424d40391fa2e301a3e354f7b4a28ac1"
-  },
-  ".taste-skill/gate/consistency/390-19-off-grid.jpg": {
-    "mtime": 1795189865.194935,
-    "seen": 1795191925.527704,
-    "ast_hash": "fc169fb3e0df5d51210cf62b9f34e4f5",
-    "semantic_hash": "fc169fb3e0df5d51210cf62b9f34e4f5"
-  },
-  ".taste-skill/gate/consistency/390-20-section-gaps.jpg": {
-    "mtime": 1795189865.2027287,
-    "seen": 1795191925.527704,
-    "ast_hash": "22d6a141b2a557fc6376152a22981044",
-    "semantic_hash": "22d6a141b2a557fc6376152a22981044"
-  },
-  ".taste-skill/gate/consistency/390-21-text-only.jpg": {
-    "mtime": 1795189865.2123873,
-    "seen": 1795191925.527704,
-    "ast_hash": "9ffd7d2d3a2c29ee3eacc1e9f64ee677",
-    "semantic_hash": "9ffd7d2d3a2c29ee3eacc1e9f64ee677"
-  },
-  ".taste-skill/gate/consistency/390-22-stagger.jpg": {
-    "mtime": 1795189865.2189522,
-    "seen": 1795191925.527704,
-    "ast_hash": "3dad1f805bed7455797ca6e6e68e307e",
-    "semantic_hash": "3dad1f805bed7455797ca6e6e68e307e"
-  },
-  ".taste-skill/gate/consistency/390-23-heading-align.jpg": {
-    "mtime": 1795189865.2239466,
-    "seen": 1795191925.527704,
-    "ast_hash": "6b71628e63c306c8580026daa021de79",
-    "semantic_hash": "6b71628e63c306c8580026daa021de79"
-  },
-  ".taste-skill/gate/consistency/390-24-off-grid.jpg": {
-    "mtime": 1795189865.2338006,
-    "seen": 1795191925.527704,
-    "ast_hash": "59130f107527c1b48d8acfd05469af39",
-    "semantic_hash": "59130f107527c1b48d8acfd05469af39"
-  },
-  ".taste-skill/gate/consistency/390-25-off-grid.jpg": {
-    "mtime": 1795189865.2412682,
-    "seen": 1795191925.527704,
-    "ast_hash": "1fb3f270c87dc673fcb95f42650086cb",
-    "semantic_hash": "1fb3f270c87dc673fcb95f42650086cb"
-  },
-  ".taste-skill/gate/consistency/390-26-off-grid.jpg": {
-    "mtime": 1795189865.2505417,
-    "seen": 1795191925.527704,
-    "ast_hash": "766b0e4b136cae149c09a740414d92ea",
-    "semantic_hash": "766b0e4b136cae149c09a740414d92ea"
-  },
-  ".taste-skill/gate/consistency/390-27-section-tile.jpg": {
-    "mtime": 1795189865.264881,
-    "seen": 1795191925.527704,
-    "ast_hash": "0a14c84310d78eedcfd1628d2926b41c",
-    "semantic_hash": "0a14c84310d78eedcfd1628d2926b41c"
-  },
-  ".taste-skill/gate/consistency/narrow-320-01-tap-size.jpg": {
-    "mtime": 1795189882.8538942,
-    "seen": 1795191925.527704,
-    "ast_hash": "7214825e314834c5d5778bb5744c1815",
-    "semantic_hash": "7214825e314834c5d5778bb5744c1815"
-  },
-  ".taste-skill/gate/consistency/narrow-320-02-tap-size.jpg": {
-    "mtime": 1795189882.8598988,
-    "seen": 1795191925.527704,
-    "ast_hash": "aef04275133280b9716daefa0e24069d",
-    "semantic_hash": "aef04275133280b9716daefa0e24069d"
-  },
-  ".taste-skill/gate/consistency/narrow-320-03-tap-size.jpg": {
-    "mtime": 1795189883.2526324,
-    "seen": 1795191925.527704,
-    "ast_hash": "ba667a5a8baf3ab965ecfbe0455918d0",
-    "semantic_hash": "ba667a5a8baf3ab965ecfbe0455918d0"
-  },
-  ".taste-skill/gate/consistency/narrow-320-04-tap-size.jpg": {
-    "mtime": 1795189884.000117,
-    "seen": 1795191925.527704,
-    "ast_hash": "206357921b1b6afabbdba7985334f220",
-    "semantic_hash": "206357921b1b6afabbdba7985334f220"
-  },
-  ".taste-skill/gate/consistency/narrow-320-05-tap-size.jpg": {
-    "mtime": 1795189884.00751,
-    "seen": 1795191925.527704,
-    "ast_hash": "0d9c242501fbfb3269c59d2b5690dd3f",
-    "semantic_hash": "0d9c242501fbfb3269c59d2b5690dd3f"
-  },
   "public/icons.svg": {
     "mtime": 1795189111.1744463,
     "seen": 1795191925.527704,
@@ -816,10 +414,10 @@
     "semantic_hash": "0e9ce19c90d5df5f1cb27cdcb999d2ed"
   },
   "src/app/api/v1/auth/login/route.ts": {
-    "mtime": 1795193100.3400254,
-    "seen": 1795193429.9523177,
-    "ast_hash": "c6cd43c50968b1389491f09b9a0b5753",
-    "semantic_hash": "c6cd43c50968b1389491f09b9a0b5753"
+    "mtime": 1795228303.1205914,
+    "seen": 1795228540.8865666,
+    "ast_hash": "b09c416b0ba1d7bd50d24f196f92a738",
+    "semantic_hash": "b09c416b0ba1d7bd50d24f196f92a738"
   },
   "src/app/api/v1/auth/logout/route.ts": {
     "mtime": 1795193103.7396195,
@@ -828,16 +426,16 @@
     "semantic_hash": "b98f20f4a804c1f578abc89c39062ceb"
   },
   "src/app/api/v1/auth/register/route.ts": {
-    "mtime": 1795193102.1022637,
-    "seen": 1795193429.9523177,
-    "ast_hash": "b3cccd1fd118d578cc43f7cb1c04874f",
-    "semantic_hash": "b3cccd1fd118d578cc43f7cb1c04874f"
+    "mtime": 1795228303.147509,
+    "seen": 1795228540.8865666,
+    "ast_hash": "c0840c123e6196dced92e5ebd65e4f90",
+    "semantic_hash": "c0840c123e6196dced92e5ebd65e4f90"
   },
   "src/app/api/v1/auth/reset/route.ts": {
-    "mtime": 1795193105.7668998,
-    "seen": 1795193429.9523177,
-    "ast_hash": "f72a093fe16356119045b87462dcb058",
-    "semantic_hash": "f72a093fe16356119045b87462dcb058"
+    "mtime": 1795228303.1807382,
+    "seen": 1795228540.8865666,
+    "ast_hash": "da46f17fafae867728c1993d2d8ae3e4",
+    "semantic_hash": "da46f17fafae867728c1993d2d8ae3e4"
   },
   "src/app/api/v1/sessions/route.ts": {
     "mtime": 1795193107.6289797,
@@ -846,10 +444,10 @@
     "semantic_hash": "c018aaa20c580ec7d7dda50986249592"
   },
   "src/app/masuk/page.tsx": {
-    "mtime": 1795193219.6548924,
-    "seen": 1795193429.9523177,
-    "ast_hash": "b5d0be0dce0e18a8e0427585e01c927e",
-    "semantic_hash": "b5d0be0dce0e18a8e0427585e01c927e"
+    "mtime": 1795228354.3789766,
+    "seen": 1795228540.8865666,
+    "ast_hash": "7fd0b232aed8ac1508c5d9c9fb93e363",
+    "semantic_hash": "7fd0b232aed8ac1508c5d9c9fb93e363"
   },
   "src/components/ui/input.tsx": {
     "mtime": 1795193094.7710185,
@@ -864,16 +462,16 @@
     "semantic_hash": "c5d32c9b5689f11871a6c08a1c9984d5"
   },
   "src/features/auth/login-workspace.tsx": {
-    "mtime": 1795194411.2586565,
-    "seen": 1795194483.8436024,
-    "ast_hash": "e423f886c2b264ff17b03d74408e757a",
-    "semantic_hash": "e423f886c2b264ff17b03d74408e757a"
+    "mtime": 1795228404.5964026,
+    "seen": 1795228540.8865666,
+    "ast_hash": "25aafedc27f64f1044dbb1f34e9bd363",
+    "semantic_hash": "25aafedc27f64f1044dbb1f34e9bd363"
   },
   "src/server/seed-data.ts": {
-    "mtime": 1795194000.9417672,
-    "seen": 1795194483.8436024,
-    "ast_hash": "ebb77119fd5b37f724fb777459ad2990",
-    "semantic_hash": "ebb77119fd5b37f724fb777459ad2990"
+    "mtime": 1795228237.2713864,
+    "seen": 1795228540.8865666,
+    "ast_hash": "4caa0319173f370124289e61b381add4",
+    "semantic_hash": "4caa0319173f370124289e61b381add4"
   },
   "reports/Arsitektur data dan alur pengguna Ucapin.md": {
     "mtime": 1795192971.4228106,
@@ -892,5 +490,35 @@
     "seen": 1795195390.429651,
     "ast_hash": "e30799e79c4a106e7d51cc4f74feedc9",
     "semantic_hash": "e30799e79c4a106e7d51cc4f74feedc9"
+  },
+  "prisma/migrations/20261121090000_hash_user_passwords/migration.sql": {
+    "mtime": 1795228242.7007153,
+    "seen": 1795228540.8865666,
+    "ast_hash": "580523f6b2c508eddeb764d6b99dea25",
+    "semantic_hash": "580523f6b2c508eddeb764d6b99dea25"
+  },
+  "src/middleware.ts": {
+    "mtime": 1795228309.5359027,
+    "seen": 1795228540.8865666,
+    "ast_hash": "afb3ac23165a60767cab6645e9439fc6",
+    "semantic_hash": "afb3ac23165a60767cab6645e9439fc6"
+  },
+  "src/server/password.ts": {
+    "mtime": 1795228229.4267395,
+    "seen": 1795228540.8865666,
+    "ast_hash": "4c85ec2c0b4a8be12f5d6223ba60bc8d",
+    "semantic_hash": "4c85ec2c0b4a8be12f5d6223ba60bc8d"
+  },
+  "src/server/session.ts": {
+    "mtime": 1795228229.475893,
+    "seen": 1795228540.8865666,
+    "ast_hash": "659e23e1806b79c90d6274592f1edb15",
+    "semantic_hash": "659e23e1806b79c90d6274592f1edb15"
+  },
+  "src/server/test-accounts.ts": {
+    "mtime": 1795228229.5188873,
+    "seen": 1795228540.8865666,
+    "ast_hash": "8f44964e0e91048c502917480f378693",
+    "semantic_hash": "8f44964e0e91048c502917480f378693"
   }
 }

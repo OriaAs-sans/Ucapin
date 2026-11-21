@@ -6,10 +6,10 @@ Dokumen ini merangkum hasil riset struktur data yang dibutuhkan agar Ucapin dapa
 
 Untuk memvalidasi pengalaman pengguna pertama kali (*first-run onboarding*) sekaligus pengalaman pengguna harian (*habit loop*), database menyediakan dua profil pengujian utama ditambah fitur pendaftaran akun baru:
 
-| Profil | Email & Sandi | Kondisi Awal di Database | Alur yang Diuji |
+| Profil | Kredensial | Kondisi Awal di Database | Alur yang Diuji |
 |---|---|---|---|
-| **Pelajar Baru (Budi Santoso, A2)** | `baru@ucapin.id` / `ucapin123` | `onboardingCompleted: false`, `spokenTodayMinutes: 0`, `streakDays: 0`, `MistakeItem: 0` | `/masuk` -> `/mulai` (pilih tujuan & target menit) -> `/cek-mikrofon` (izin mic & UU PDP) -> `/latihan-ucapan` (kalimat sesuai tujuan) -> `/hasil` (sesi pertama tercatat) -> `/bank-kesalahan` (kata pertama masuk) -> `/` (Beranda terisi) |
-| **Pelajar Aktif (Alya Putri, B1)** | `alya@ucapin.id` / `ucapin123` | `onboardingCompleted: true`, `spokenTodayMinutes: 9/15`, `streakDays: 12`, `MistakeItem: 5 kata` | `/masuk` -> `/` (Beranda) -> `/roleplay` atau `/latihan-ucapan?source=bank` -> `/hasil` -> `/bank-kesalahan` |
+| **Pelajar Baru (Budi Santoso, A2)** | `TEST_ACCOUNT_NEW_EMAIL` + `TEST_ACCOUNT_PASSWORD` di `.env.local` | `onboardingCompleted: false`, `spokenTodayMinutes: 0`, `streakDays: 0`, `MistakeItem: 0` | `/masuk` -> `/mulai` (pilih tujuan & target menit) -> `/cek-mikrofon` (izin mic & UU PDP) -> `/latihan-ucapan` (kalimat sesuai tujuan) -> `/hasil` (sesi pertama tercatat) -> `/bank-kesalahan` (kata pertama masuk) -> `/` (Beranda terisi) |
+| **Pelajar Aktif (Alya Putri, B1)** | `TEST_ACCOUNT_ACTIVE_EMAIL` + `TEST_ACCOUNT_PASSWORD` di `.env.local` | `onboardingCompleted: true`, `spokenTodayMinutes: 9/15`, `streakDays: 12`, `MistakeItem: 5 kata` | `/masuk` -> `/` (Beranda) -> `/roleplay` atau `/latihan-ucapan?source=bank` -> `/hasil` -> `/bank-kesalahan` |
 
 ## 2. Pemetaan tujuan belajar ke kurikulum (`goalTag`)
 

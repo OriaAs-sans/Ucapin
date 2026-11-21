@@ -1,48 +1,61 @@
 import { NextResponse } from "next/server";
 import {
   authenticateUser,
-  SESSION_COOKIE_NAME,
+  getUserById,
 } from "@/server/repositories/ucapin-repository";
+import { setSessionCookie } from "@/server/session";
+import { isTestAccountId, testAccountsEnabled } from "@/server/test-accounts";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, password, userId } = body as {
-      email?: string;
-      password?: string;
-      userId?: string;
+    const body = (await request.json().catch(() => ({}))) as {
+      email?: unknown;
+      password?: unknown;
+      testAccountId?: unknown;
     };
 
-    const user = await authenticateUser({ email, password, userId });
+    let user = null;
+
+    if (typeof body.testAccountId === "string") {
+      // Pintasan 1-klik hanya untuk akun testing, dan hanya di mode pengembangan.
+      if (!testAccountsEnabled() || !isTestAccountId(body.testAccountId)) {
+        return NextResponse.json(
+          { ok: false, error: "Pintasan akun testing tidak aktif." },
+          { status: 403 }
+        );
+      }
+      user = await getUserById(body.testAccountId);
+    } else {
+      const email = typeof body.email === "string" ? body.email.trim() : "";
+      const password = typeof body.password === "string" ? body.password : "";
+      if (!email || !password) {
+        return NextResponse.json(
+          { ok: false, error: "Email dan kata sandi wajib diisi." },
+          { status: 400 }
+        );
+      }
+      user = await authenticateUser({ email, password });
+    }
+
     if (!user) {
       return NextResponse.json(
-        {
-          ok: false,
-          error:
-            "Email atau kata sandi tidak cocok. Gunakan akun testing atau daftar akun baru.",
-        },
+        { ok: false, error: "Email atau kata sandi tidak cocok." },
         { status: 401 }
       );
     }
 
-    const redirectTo = user.onboardingCompleted ? "/" : "/mulai";
     const response = NextResponse.json({
       ok: true,
       user,
-      redirectTo,
+      redirectTo: user.onboardingCompleted ? "/" : "/mulai",
     });
-
-    response.cookies.set(SESSION_COOKIE_NAME, user.id, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
+    setSessionCookie(response, user.id);
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Gagal masuk ke akun";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error("Login gagal:", error);
+    return NextResponse.json(
+      { ok: false, error: "Gagal masuk ke akun. Coba lagi sebentar lagi." },
+      { status: 500 }
+    );
   }
 }

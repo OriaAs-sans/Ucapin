@@ -62,7 +62,7 @@ Untuk menghindari tampilan generik buatan AI:
 ## 6. Rute Layar (Next.js App Router ↔ Prototype)
 | Rute Next.js | File Prototype | Isi kunci |
 |---|---|---|
-| `/masuk` | — | Login email/sandi, daftar akun baru dengan persetujuan UU PDP, pintasan 1-klik akun testing (Pelajar Baru vs Alya B1), dan tombol reset data Laragon |
+| `/masuk` | (belum ada) | Login email/sandi (form kosong, tanpa petunjuk sandi), daftar akun baru dengan persetujuan UU PDP; pintasan 1-klik akun testing dan tombol reset data hanya tampil di mode development (`ENABLE_TEST_ACCOUNTS`) |
 | `/` | `index.html` | Beranda: banner target harian + `PhoneticSpecimenCard`, 4 kartu mode, kartu Bank Kesalahan, lanjutkan roleplay, panel profil & liga menit |
 | `/latihan-ucapan` | `latihan-ucapan.html` | Pronunciation Drill: filter per tujuan belajar (`kerja`, `jalan`, `ielts`, `harian`, `bank`), `ProofreadingSentence`, `MicRecorder`, prompt ulang sebelum recast, 4 `ScoreMetricCard`, panel catatan pelatih |
 | `/roleplay` | `roleplay.html` | Roleplay berskrip (4 skenario sesuai tujuan): chat dengan koreksi inline/akhir, petunjuk ucapan, composer `MicRecorder compact`, panel misi & frasa |

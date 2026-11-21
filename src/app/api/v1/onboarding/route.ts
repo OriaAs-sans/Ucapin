@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import {
   getActiveUser,
-  SESSION_COOKIE_NAME,
   updateOnboardingProfile,
 } from "@/server/repositories/ucapin-repository";
+import { setSessionCookie } from "@/server/session";
 
 export const dynamic = "force-dynamic";
 
@@ -61,12 +61,7 @@ export async function PATCH(request: Request) {
     revalidatePath("/roleplay");
 
     const response = NextResponse.json({ ok: true, user: updated });
-    response.cookies.set(SESSION_COOKIE_NAME, updated.id, {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-    });
+    setSessionCookie(response, updated.id);
 
     return response;
   } catch (error) {

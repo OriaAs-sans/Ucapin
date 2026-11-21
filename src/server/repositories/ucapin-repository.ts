@@ -1,5 +1,14 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { prisma } from "@/server/db";
+import {
+  burnPasswordCheck,
+  hashPassword,
+  MIN_PASSWORD_LENGTH,
+  verifyPassword,
+} from "@/server/password";
+import { readSessionToken, SESSION_COOKIE_NAME } from "@/server/session";
+import { TEST_ACCOUNT_IDS } from "@/server/test-accounts";
 import type {
   DailyActivityDTO,
   DrillSentenceDTO,
@@ -12,8 +21,16 @@ import type {
   UserProfileDTO,
 } from "@/types/ucapin";
 
-export const SESSION_COOKIE_NAME = "ucapin_user_id";
-const DEFAULT_USER_ID = "learner-baru";
+export { SESSION_COOKIE_NAME };
+
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    readonly status: 400 | 401 | 409
+  ) {
+    super(message);
+  }
+}
 
 const GOAL_TO_SCENARIO: Record<string, string> = {
   kerja: "wawancara-startup",
@@ -46,7 +63,7 @@ function mapUser(u: {
 }): UserProfileDTO {
   return {
     id: u.id,
-    email: u.email ?? "baru@ucapin.id",
+    email: u.email,
     name: u.name,
     initials: u.initials,
     roleLabel: u.roleLabel ?? "Pelajar",
@@ -68,71 +85,77 @@ function mapUser(u: {
   };
 }
 
-export async function getSessionCookieValue(): Promise<string | null> {
+// Mengembalikan id pengguna dari cookie sesi yang tanda tangannya valid, atau null.
+export async function getSessionUserId(): Promise<string | null> {
   try {
     const store = await cookies();
-    return store.get(SESSION_COOKIE_NAME)?.value ?? null;
+    return readSessionToken(store.get(SESSION_COOKIE_NAME)?.value);
   } catch {
     return null;
   }
 }
 
-export async function getSessionUserId(): Promise<string> {
-  const val = await getSessionCookieValue();
-  return val ?? DEFAULT_USER_ID;
-}
-
 export async function getActiveUser(): Promise<UserProfileDTO> {
-  const targetId = await getSessionUserId();
-  const user =
-    (await prisma.user.findUnique({ where: { id: targetId } })) ??
-    (await prisma.user.findUnique({ where: { id: DEFAULT_USER_ID } })) ??
-    (await prisma.user.findFirst());
+  const userId = await getSessionUserId();
+  const user = userId
+    ? await prisma.user.findUnique({ where: { id: userId } })
+    : null;
 
   if (!user) {
-    throw new Error("Database belum di-seed. Jalankan npm run db:seed");
+    redirect("/masuk");
   }
   return mapUser(user);
 }
 
 export async function getAllTestingUsers(): Promise<UserProfileDTO[]> {
   const rows = await prisma.user.findMany({
+    where: { id: { in: Object.values(TEST_ACCOUNT_IDS) } },
     orderBy: { createdAt: "asc" },
   });
   return rows.map(mapUser);
 }
 
+export async function getUserById(id: string): Promise<UserProfileDTO | null> {
+  const user = await prisma.user.findUnique({ where: { id } });
+  return user ? mapUser(user) : null;
+}
+
 export async function authenticateUser(input: {
-  email?: string;
-  password?: string;
-  userId?: string;
+  email: string;
+  password: string;
 }): Promise<UserProfileDTO | null> {
-  if (input.userId) {
-    const byId = await prisma.user.findUnique({ where: { id: input.userId } });
-    return byId ? mapUser(byId) : null;
-  }
-  if (!input.email) return null;
   const user = await prisma.user.findUnique({
     where: { email: input.email.trim().toLowerCase() },
   });
-  if (!user) return null;
-  if (input.password && user.password !== input.password) {
+  if (!user) {
+    await burnPasswordCheck(input.password);
     return null;
   }
-  return mapUser(user);
+  const valid = await verifyPassword(input.password, user.passwordHash);
+  return valid ? mapUser(user) : null;
 }
 
 export async function registerNewUser(input: {
   name: string;
   email: string;
-  password?: string;
+  password: string;
 }): Promise<UserProfileDTO> {
+  if (input.password.length < MIN_PASSWORD_LENGTH) {
+    throw new AuthError(
+      `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter.`,
+      400
+    );
+  }
+
   const cleanEmail = input.email.trim().toLowerCase();
   const existing = await prisma.user.findUnique({
     where: { email: cleanEmail },
   });
   if (existing) {
-    return mapUser(existing);
+    throw new AuthError(
+      "Email ini sudah terdaftar. Masuk dengan email itu atau pakai email lain.",
+      409
+    );
   }
 
   const parts = input.name.trim().split(/\s+/);
@@ -144,7 +167,7 @@ export async function registerNewUser(input: {
   const created = await prisma.user.create({
     data: {
       email: cleanEmail,
-      password: input.password || "ucapin123",
+      passwordHash: await hashPassword(input.password),
       name: input.name.trim(),
       initials,
       roleLabel: "Pelajar Baru",

@@ -1,6 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
+import { hashPassword } from "./password";
+import { readTestAccountCredentials, TEST_ACCOUNT_IDS } from "./test-accounts";
 
 export async function seedUcapinDatabase(prisma: PrismaClient) {
+  // Dibaca sebelum menghapus data, agar env yang kosong tidak meninggalkan database kosong.
+  const credentials = readTestAccountCredentials();
+  const testPasswordHash = await hashPassword(credentials.password);
+
   await prisma.phonemeScore.deleteMany();
   await prisma.utterance.deleteMany();
   await prisma.speakingSession.deleteMany();
@@ -132,9 +138,9 @@ export async function seedUcapinDatabase(prisma: PrismaClient) {
   // 2. Seed Account 1: Truly Fresh User from Zero (Budi Santoso - 0 progress, 0 goals preselected)
   const budi = await prisma.user.create({
     data: {
-      id: "learner-baru",
-      email: "baru@ucapin.id",
-      password: "ucapin123",
+      id: TEST_ACCOUNT_IDS.fresh,
+      email: credentials.freshEmail,
+      passwordHash: testPasswordHash,
       name: "Budi Santoso",
       initials: "BS",
       roleLabel: "Pelajar Baru",
@@ -171,9 +177,9 @@ export async function seedUcapinDatabase(prisma: PrismaClient) {
   // 3. Seed Account 2: Experienced Learner (Alya Putri - B1, has completed sessions & mistakes)
   const alya = await prisma.user.create({
     data: {
-      id: "learner-alya",
-      email: "alya@ucapin.id",
-      password: "ucapin123",
+      id: TEST_ACCOUNT_IDS.active,
+      email: credentials.activeEmail,
+      passwordHash: testPasswordHash,
       name: "Alya Putri",
       initials: "AL",
       roleLabel: "Product Designer · B1",
