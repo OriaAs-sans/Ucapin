@@ -51,6 +51,13 @@ export async function PATCH(request: Request) {
         typeof body.activeScenarioSlug === "string"
           ? body.activeScenarioSlug
           : undefined,
+      leagueOptIn:
+        typeof body.leagueOptIn === "boolean" ? body.leagueOptIn : undefined,
+      // Nama panggilan liga: dipangkas, tanpa karakter kontrol, maksimal 20 karakter.
+      leagueNickname:
+        typeof body.leagueNickname === "string"
+          ? body.leagueNickname.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, 20) || null
+          : undefined,
     });
 
     revalidatePath("/", "layout");

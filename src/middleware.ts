@@ -21,6 +21,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!masuk|api/v1/auth|_next/static|_next/image|fonts|icons.svg|favicon.ico).*)",
+    "/((?!masuk|privasi|api/v1/auth|_next/static|_next/image|fonts|icons.svg|favicon.ico).*)",
   ],
 };

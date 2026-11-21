@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function HasilSesiPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sessionId?: string }>;
+  searchParams: Promise<{ sessionId?: string; bab?: string }>;
 }) {
   const params = await searchParams;
   const { user, session, sessionHistory, mistakes } =
@@ -24,6 +24,7 @@ export default async function HasilSesiPage({
       session={session}
       sessionHistory={sessionHistory}
       mistakes={mistakes}
+      chapterJustCompleted={params.bab === "selesai"}
     />
   );
 }

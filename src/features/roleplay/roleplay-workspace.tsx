@@ -43,6 +43,7 @@ interface ChatTurn {
     referenceText: string;
     scores: number[];
     speechSec: number;
+    wpm: number;
     hasMistake: boolean;
     hasWork: boolean;
     flaggedWords: string[];
@@ -57,11 +58,15 @@ export interface RoleplayWorkspaceProps {
     "slug" | "goalTag" | "title" | "category" | "cefrLevel" | "characterName"
   >[];
   initialCorrectionPref?: string;
+  /** Kunci dan nomor bab skenario ini di jalur roleplay. */
+  chapterKey: string;
+  chapterOrder: number;
 }
 
 export function RoleplayWorkspace({
   scenario,
-  allScenarios,
+  chapterKey,
+  chapterOrder,
   initialCorrectionPref = "giliran",
 }: RoleplayWorkspaceProps) {
   const router = useRouter();
@@ -104,7 +109,8 @@ export function RoleplayWorkspace({
     setStepIndex(0);
     setMicState("idle");
     setSelectedHint(null);
-    setCompletedMissions(1);
+    setCompletedMissions(0);
+    setTurnNotice(null);
     setTurns(buildInitialTurns(scenario));
   }, [scenario, buildInitialTurns]);
 
@@ -157,6 +163,7 @@ export function RoleplayWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "roleplay",
+          chapterKey,
           scenarioTitle: scenario.title,
           durationSec: elapsedSec,
           // Menit bicara dihitung dari lama rekaman, bukan lama halaman terbuka.
@@ -164,6 +171,9 @@ export function RoleplayWorkspace({
           clarityScore: avg(0),
           pronunciationScore: avg(1),
           fluencyScore: avg(2),
+          wpm: Math.round(
+            assessedTurns.reduce((acc, t) => acc + t.assessment!.wpm, 0) / assessedTurns.length
+          ),
           utterances: myUtterances,
           // Kesalahan sudah dicatat per giliran saat dinilai; tidak ada kesalahan contoh dari skrip.
           mistakes: [],
@@ -250,6 +260,7 @@ export function RoleplayWorkspace({
           referenceText: targetReference,
           scores: evaluated.scores.map((sc) => sc.score),
           speechSec: rec.durationMs / 1000,
+          wpm: evaluated.wordsPerMinute,
           hasMistake: evaluated.flaggedMistakes.length > 0,
           hasWork: evaluated.flaggedMistakes.some((m) => m.status === "work"),
           flaggedWords: evaluated.flaggedMistakes.map((m) => m.word),
@@ -303,46 +314,16 @@ export function RoleplayWorkspace({
 
   const rightPanel = (
     <>
-      <div className="grid justify-items-center gap-2 rounded-[18px] bg-[var(--tile-coral)] p-4 text-center">
-        <svg
-          viewBox="0 0 120 80"
-          width="124"
-          role="img"
-          aria-label="Ilustrasi skenario roleplay"
-        >
-          <ellipse cx="54" cy="70" rx="40" ry="6" fill="#D4C8B7" />
-          <path
-            d="M22 30h64v18a26 26 0 0 1-26 26h-12a26 26 0 0 1-26-26z"
-            fill="#F7F5EE"
-            stroke="#1E3E45"
-            strokeWidth="3"
-          />
-          <path
-            d="M86 36h6a10 10 0 0 1 0 20h-8"
-            fill="none"
-            stroke="#1E3E45"
-            strokeWidth="3"
-          />
-          <path
-            d="M30 30h48"
-            stroke="#B5523B"
-            strokeWidth="6"
-            strokeLinecap="round"
-          />
-          <path
-            d="M42 8c-4 6 4 8 0 14M56 6c-4 6 4 8 0 14M70 8c-4 6 4 8 0 14"
-            stroke="#3B6A78"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="round"
-          />
-        </svg>
+      <div className="grid gap-2 rounded-[18px] bg-[var(--tile-coral)] p-4">
+        <p className="text-xs font-bold text-[var(--tile-coral-fg)]">
+          Situasi · {scenario.cefrLevel}
+        </p>
         <p className="text-sm text-[var(--text)]">{scenario.description}</p>
       </div>
 
       <section aria-labelledby="missions-heading">
         <h2 id="missions-heading" className="font-display text-lg font-bold">
-          Misimu (3 tugas)
+          Misimu ({scenario.missions.length} tugas)
         </h2>
         <div className="mt-2.5 grid gap-2">
           {scenario.missions.map((m, idx) => {
@@ -453,7 +434,7 @@ export function RoleplayWorkspace({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button asChild variant="surface" size="icon">
-            <Link href="/" aria-label="Kembali ke Beranda">
+            <Link href="/roleplay" aria-label="Kembali ke daftar bab roleplay">
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Link>
           </Button>
@@ -462,7 +443,7 @@ export function RoleplayWorkspace({
           </span>
           <div>
             <p className="text-xs font-semibold text-[var(--text-2)]">
-              Roleplay · {scenario.category}
+              Roleplay · {scenario.category} · Bab {chapterOrder}
             </p>
             <h1 className="font-display text-2xl font-extrabold">
               {scenario.title}
@@ -491,29 +472,6 @@ export function RoleplayWorkspace({
       </header>
 
       {/* Scenario Switcher across All 4 Goals */}
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        role="navigation"
-        aria-label="Pilih skenario roleplay"
-      >
-        {allScenarios.map((sc) => {
-          const active = sc.slug === scenario.slug;
-          return (
-            <Button
-              key={sc.slug}
-              asChild
-              variant={active ? "default" : "surface"}
-              size="sm"
-              className="min-h-[36px] rounded-pill px-3.5 text-xs"
-            >
-              <Link href={`/roleplay?slug=${sc.slug}`}>
-                {sc.title} ({sc.characterName})
-              </Link>
-            </Button>
-          );
-        })}
-      </div>
-
       {/* Conversation Card */}
       <Card className="p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-[var(--line)] pb-4">

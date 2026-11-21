@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": [
+    "hnd1"
+  ],
+  "installCommand": "pnpm install",
+  "buildCommand": "npm run vercel-build",
+  "functions": {
+    "src/app/api/v1/speech/transcribe/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}

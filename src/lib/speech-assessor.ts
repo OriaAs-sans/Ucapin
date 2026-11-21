@@ -279,6 +279,8 @@ export interface UtteranceAssessmentResult {
   scores: ScoreBreakdownItem[];
   wordDetails: Record<string, WordCoachDetail>;
   primaryFocusWord: string;
+  /** Tempo bicara nyata dari waktu kata (0 bila kurang dari dua kata). */
+  wordsPerMinute: number;
   flaggedMistakes: {
     word: string;
     ipa: string;
@@ -563,6 +565,7 @@ export function assessSpokenUtterance(params: {
 
   // Kelancaran dari waktu bicara nyata: tempo (kata per menit) dan jeda panjang.
   let fluencyScore = 0;
+  let wordsPerMinute = 0;
   let fluencyDesc = "Belum ada ucapan yang terdengar";
   if (spokenWords.length >= 2) {
     const span = Math.max(
@@ -570,6 +573,7 @@ export function assessSpokenUtterance(params: {
       spokenWords[spokenWords.length - 1].end - spokenWords[0].start
     );
     const wpm = Math.round((spokenWords.length / span) * 60);
+    wordsPerMinute = wpm;
     let longPauses = 0;
     for (let k = 1; k < spokenWords.length; k++) {
       if (spokenWords[k].start - spokenWords[k - 1].end > 0.7) longPauses++;
@@ -622,6 +626,7 @@ export function assessSpokenUtterance(params: {
     scores,
     wordDetails,
     primaryFocusWord,
+    wordsPerMinute,
     flaggedMistakes,
   };
 }

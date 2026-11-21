@@ -16,10 +16,22 @@ import {
   scheduleLabelFor,
 } from "@/lib/spaced-repetition";
 import { getArticulationGuideForWord } from "@/lib/speech-assessor";
+import { getActivityStats, getWeeklyLeague, type ActivityStats } from "@/server/activity";
+import {
+  buildChapterPaths,
+  chapterStatusFor,
+  drillChapterKey,
+  GOAL_LABELS,
+  levelName,
+  parseLevel,
+  roleplayChapterKey,
+  type ChapterInput,
+  type ChapterPath,
+  type ChapterSummary,
+} from "@/lib/chapters";
 import type {
   DailyActivityDTO,
   DrillSentenceDTO,
-  LeagueEntryDTO,
   MistakeItemDTO,
   PhonemeGuideDTO,
   PhonemeStatus,
@@ -46,6 +58,8 @@ const GOAL_TO_SCENARIO: Record<string, string> = {
   harian: "memesan-di-kafe",
 };
 
+const EMPTY_STATS = { spokenTodayMinutes: 0, totalSpokenMinutes: 0, streakDays: 0 };
+
 function mapUser(u: {
   id: string;
   email: string;
@@ -57,17 +71,16 @@ function mapUser(u: {
   cefrProgressPct: number;
   goals: string[];
   dailyTargetMinutes: number;
-  spokenTodayMinutes: number;
-  totalSpokenMinutes: number;
   clarityAvg: number;
-  streakDays: number;
   streakFreezes: number;
   correctionPref: string;
   saveAudioOptIn: boolean;
   onboardingCompleted: boolean;
   micChecked: boolean;
   activeScenarioSlug: string;
-}): UserProfileDTO {
+  leagueOptIn: boolean;
+  leagueNickname: string | null;
+}, stats: Omit<ActivityStats, "weeklyActivities"> = EMPTY_STATS): UserProfileDTO {
   return {
     id: u.id,
     email: u.email,
@@ -79,16 +92,18 @@ function mapUser(u: {
     cefrProgressPct: u.cefrProgressPct,
     goals: Array.isArray(u.goals) ? u.goals : [],
     dailyTargetMinutes: u.dailyTargetMinutes,
-    spokenTodayMinutes: u.spokenTodayMinutes,
-    totalSpokenMinutes: u.totalSpokenMinutes,
+    spokenTodayMinutes: stats.spokenTodayMinutes,
+    totalSpokenMinutes: stats.totalSpokenMinutes,
     clarityAvg: u.clarityAvg,
-    streakDays: u.streakDays,
+    streakDays: stats.streakDays,
     streakFreezes: u.streakFreezes,
     correctionPref: u.correctionPref,
     saveAudioOptIn: u.saveAudioOptIn,
     onboardingCompleted: u.onboardingCompleted ?? false,
     micChecked: u.micChecked ?? false,
     activeScenarioSlug: u.activeScenarioSlug || "wawancara-startup",
+    leagueOptIn: u.leagueOptIn,
+    leagueNickname: u.leagueNickname,
   };
 }
 
@@ -152,7 +167,7 @@ export async function getActiveUser(): Promise<UserProfileDTO> {
   if (!user) {
     redirect("/masuk");
   }
-  return mapUser(user);
+  return mapUser(user, await getActivityStats(user.id));
 }
 
 export async function getAllTestingUsers(): Promise<UserProfileDTO[]> {
@@ -160,7 +175,7 @@ export async function getAllTestingUsers(): Promise<UserProfileDTO[]> {
     where: { id: { in: Object.values(TEST_ACCOUNT_IDS) } },
     orderBy: { createdAt: "asc" },
   });
-  return rows.map(mapUser);
+  return rows.map((r) => mapUser(r));
 }
 
 export async function getUserById(id: string): Promise<UserProfileDTO | null> {
@@ -224,10 +239,7 @@ export async function registerNewUser(input: {
       cefrProgressPct: 0,
       goals: [],
       dailyTargetMinutes: 10,
-      spokenTodayMinutes: 0,
-      totalSpokenMinutes: 0,
       clarityAvg: 0,
-      streakDays: 0,
       streakFreezes: 2,
       correctionPref: "giliran",
       saveAudioOptIn: false,
@@ -237,17 +249,6 @@ export async function registerNewUser(input: {
     },
   });
 
-  await prisma.dailyActivity.createMany({
-    data: [
-      { userId: created.id, dayOrder: 1, dayLabel: "Sen", minutesSpoken: 0, isToday: false },
-      { userId: created.id, dayOrder: 2, dayLabel: "Sel", minutesSpoken: 0, isToday: false },
-      { userId: created.id, dayOrder: 3, dayLabel: "Rab", minutesSpoken: 0, isToday: false },
-      { userId: created.id, dayOrder: 4, dayLabel: "Kam", minutesSpoken: 0, isToday: false },
-      { userId: created.id, dayOrder: 5, dayLabel: "Jum", minutesSpoken: 0, isToday: true },
-      { userId: created.id, dayOrder: 6, dayLabel: "Sab", minutesSpoken: 0, isToday: false },
-      { userId: created.id, dayOrder: 7, dayLabel: "Min", minutesSpoken: 0, isToday: false },
-    ],
-  });
 
   return mapUser(created);
 }
@@ -275,8 +276,8 @@ export async function getDashboardData() {
 
   const [
     mistakes,
-    activities,
-    allUsers,
+    stats,
+    leagueDTOs,
     allScenarios,
     allDrillSentences,
     userSessions,
@@ -285,13 +286,8 @@ export async function getDashboardData() {
       where: { userId: user.id },
       orderBy: [{ occurrenceCount: "desc" }, { updatedAt: "desc" }],
     }),
-    prisma.dailyActivity.findMany({
-      where: { userId: user.id },
-      orderBy: { dayOrder: "asc" },
-    }),
-    prisma.user.findMany({
-      orderBy: [{ totalSpokenMinutes: "desc" }, { createdAt: "asc" }],
-    }),
+    getActivityStats(user.id),
+    getWeeklyLeague(user.id),
     prisma.scenario.findMany({
       include: { nodes: { orderBy: { stepIndex: "asc" } } },
     }),
@@ -323,23 +319,7 @@ export async function getDashboardData() {
 
   const mistakeDTOs: MistakeItemDTO[] = sortMistakes(mistakes.map((m) => mapMistake(m)));
 
-  const activityDTOs: DailyActivityDTO[] = activities.map((a) => ({
-    id: a.id,
-    dayOrder: a.dayOrder,
-    dayLabel: a.dayLabel,
-    minutesSpoken: a.minutesSpoken,
-    isToday: a.isToday,
-  }));
-
-  // Compute Weekly League directly from actual User rows in PostgreSQL
-  const leagueDTOs: LeagueEntryDTO[] = allUsers.map((u, idx) => ({
-    id: u.id,
-    rank: idx + 1,
-    name: u.id === user.id ? `${u.name} (kamu)` : u.name,
-    initials: u.initials,
-    minutesSpoken: u.totalSpokenMinutes,
-    isCurrentUser: u.id === user.id,
-  }));
+  const activityDTOs: DailyActivityDTO[] = stats.weeklyActivities;
 
   return {
     user,
@@ -367,20 +347,10 @@ export async function getDashboardData() {
   };
 }
 
-export async function getDrillSentences(options?: {
-  goalTag?: string;
-  source?: string;
-}): Promise<{
-  user: UserProfileDTO;
-  sentences: DrillSentenceDTO[];
-  activeGoal: string;
-}> {
-  const user = await getActiveUser();
-  const allRows = await prisma.drillSentence.findMany({
-    orderBy: { orderIndex: "asc" },
-  });
+type DrillRow = Awaited<ReturnType<typeof prisma.drillSentence.findMany>>[number];
 
-  const allMapped: DrillSentenceDTO[] = allRows.map((r) => ({
+function mapDrillRow(r: DrillRow): DrillSentenceDTO {
+  return {
     id: r.id,
     goalTag: r.goalTag ?? "harian",
     cefrLevel: r.cefrLevel ?? "B1",
@@ -398,7 +368,168 @@ export async function getDrillSentences(options?: {
     coachSteps: JSON.parse(r.coachStepsJson),
     phonemeBreakdown: JSON.parse(r.phonemeBreakdownJson),
     minimalPairs: JSON.parse(r.minimalPairsJson),
+  };
+}
+
+async function getCompletedChapters(userId: string): Promise<Map<string, number>> {
+  const rows = await prisma.chapterProgress.findMany({ where: { userId } });
+  return new Map(rows.map((r) => [r.chapterKey, r.bestClarity]));
+}
+
+/** Urutan jalur: tujuan pilihan pelajar dulu, lalu sisanya. */
+function goalOrderFor(user: UserProfileDTO): string[] {
+  return [...user.goals, ...Object.keys(GOAL_LABELS).filter((g) => !user.goals.includes(g))];
+}
+
+async function buildDrillPaths(user: UserProfileDTO): Promise<ChapterPath[]> {
+  const rows = await prisma.drillSentence.findMany({
+    select: { goalTag: true, cefrLevel: true, focusPhonemes: true },
+    orderBy: { orderIndex: "asc" },
+  });
+  const groups = new Map<string, { goalTag: string; level: string; focus: string[]; count: number }>();
+  for (const r of rows) {
+    const key = drillChapterKey(r.goalTag, r.cefrLevel);
+    const g = groups.get(key) ?? { goalTag: r.goalTag, level: r.cefrLevel, focus: [], count: 0 };
+    g.count++;
+    if (!g.focus.includes(r.focusPhonemes)) g.focus.push(r.focusPhonemes);
+    groups.set(key, g);
+  }
+  const items: ChapterInput[] = [...groups.entries()].map(([key, g]) => ({
+    key,
+    goalTag: g.goalTag,
+    level: g.level,
+    title: `${g.level} · ${levelName(g.level)}`,
+    subtitle: `Fokus: ${g.focus.slice(0, 2).join(", ")}`,
+    itemCount: g.count,
+    href: `/latihan-ucapan?bab=${g.goalTag}-${g.level}`,
   }));
+  return buildChapterPaths(items, await getCompletedChapters(user.id), goalOrderFor(user));
+}
+
+async function buildRoleplayPaths(user: UserProfileDTO): Promise<ChapterPath[]> {
+  const scenarios = await prisma.scenario.findMany({
+    select: {
+      slug: true,
+      goalTag: true,
+      title: true,
+      cefrLevel: true,
+      characterName: true,
+      _count: { select: { nodes: true } },
+    },
+    // id cuid berurutan menurut waktu pembuatan, jadi ini mengikuti urutan materi di seed.
+    orderBy: { id: "asc" },
+  });
+  const items: ChapterInput[] = scenarios.map((sc) => ({
+    key: roleplayChapterKey(sc.slug),
+    goalTag: sc.goalTag,
+    level: parseLevel(sc.cefrLevel),
+    title: sc.title,
+    subtitle: `Bersama ${sc.characterName}`,
+    itemCount: sc._count.nodes,
+    href: `/roleplay?slug=${sc.slug}`,
+  }));
+  return buildChapterPaths(items, await getCompletedChapters(user.id), goalOrderFor(user));
+}
+
+export async function getDrillChapterMap() {
+  const user = await getActiveUser();
+  return { user, paths: await buildDrillPaths(user) };
+}
+
+export async function getRoleplayChapterMap() {
+  const user = await getActiveUser();
+  return { user, paths: await buildRoleplayPaths(user) };
+}
+
+/** Satu bab Latihan Ucapan. `chapter.status === "locked"` berarti pemanggil harus menolak. */
+export async function getDrillChapter(goalTag: string, level: string): Promise<{
+  user: UserProfileDTO;
+  chapter: ChapterSummary;
+  pathLabel: string;
+  sentences: DrillSentenceDTO[];
+} | null> {
+  const user = await getActiveUser();
+  const paths = await buildDrillPaths(user);
+  const chapter = chapterStatusFor(paths, drillChapterKey(goalTag, level));
+  if (!chapter) return null;
+  const rows = await prisma.drillSentence.findMany({
+    where: { goalTag, cefrLevel: level },
+    orderBy: { orderIndex: "asc" },
+  });
+  return {
+    user,
+    chapter,
+    pathLabel: GOAL_LABELS[goalTag] ?? goalTag,
+    sentences: rows.map(mapDrillRow),
+  };
+}
+
+/** Status bab roleplay untuk satu skenario (null bila skenario tidak ada). */
+export async function getRoleplayChapterStatus(slug: string): Promise<ChapterSummary | null> {
+  const user = await getActiveUser();
+  return chapterStatusFor(await buildRoleplayPaths(user), roleplayChapterKey(slug));
+}
+
+const CHAPTER_EVIDENCE_WINDOW_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * Bab dianggap selesai hanya bila (1) bab terbuka untuk pengguna, (2) sesi memuat semua
+ * kalimat bab (drill) atau semua giliran (roleplay), dan (3) server benar-benar menilai
+ * rekaman sebanyak isi bab dalam 3 jam terakhir. Teks dari browser saja tidak cukup.
+ */
+async function verifyChapterCompletion(
+  user: UserProfileDTO,
+  chapterKey: string,
+  referenceTexts: string[]
+): Promise<boolean> {
+  const [kind, ...rest] = chapterKey.split(":");
+  let requiredCount = 0;
+  let status: ChapterSummary | null = null;
+
+  if (kind === "drill" && rest.length === 2) {
+    const [goalTag, level] = rest;
+    status = chapterStatusFor(await buildDrillPaths(user), chapterKey);
+    const sentences = await prisma.drillSentence.findMany({
+      where: { goalTag, cefrLevel: level },
+      select: { text: true },
+    });
+    const spoken = new Set(referenceTexts);
+    if (sentences.length === 0 || !sentences.every((s) => spoken.has(s.text))) return false;
+    requiredCount = sentences.length;
+  } else if (kind === "roleplay" && rest.length === 1) {
+    status = chapterStatusFor(await buildRoleplayPaths(user), chapterKey);
+    const nodes = await prisma.scenarioNode.count({ where: { scenario: { slug: rest[0] } } });
+    if (nodes === 0 || referenceTexts.length < nodes) return false;
+    requiredCount = nodes;
+  } else {
+    return false;
+  }
+
+  if (!status || status.status === "locked") return false;
+  const recentAttempts = await prisma.speechAttempt.count({
+    where: {
+      userId: user.id,
+      audioSec: { gt: 0 },
+      createdAt: { gte: new Date(Date.now() - CHAPTER_EVIDENCE_WINDOW_MS) },
+    },
+  });
+  return recentAttempts >= requiredCount;
+}
+
+export async function getDrillSentences(options?: {
+  goalTag?: string;
+  source?: string;
+}): Promise<{
+  user: UserProfileDTO;
+  sentences: DrillSentenceDTO[];
+  activeGoal: string;
+}> {
+  const user = await getActiveUser();
+  const allRows = await prisma.drillSentence.findMany({
+    orderBy: { orderIndex: "asc" },
+  });
+
+  const allMapped: DrillSentenceDTO[] = allRows.map(mapDrillRow);
 
   if (options?.source === "bank") {
     const now = new Date();
@@ -686,6 +817,7 @@ export async function recordMistakeInBank(input: {
 
 export async function completeSpeakingSession(input: {
   mode: "drill" | "roleplay";
+  chapterKey?: string | null;
   scenarioTitle: string;
   durationSec: number;
   addedMinutes: number;
@@ -694,6 +826,7 @@ export async function completeSpeakingSession(input: {
   fluencyScore: number;
   grammarScore: number;
   vocabularyScore: number;
+  wpm: number;
   utterances: {
     referenceText: string;
     transcript: string;
@@ -719,12 +852,14 @@ export async function completeSpeakingSession(input: {
       mode: input.mode,
       scenarioTitle: input.scenarioTitle,
       durationSec: input.durationSec,
+      spokenMinutes: input.addedMinutes,
+      chapterKey: input.chapterKey ?? null,
       clarityScore: input.clarityScore,
       pronunciationScore: input.pronunciationScore,
       fluencyScore: input.fluencyScore,
       grammarScore: input.grammarScore,
       vocabularyScore: input.vocabularyScore,
-      wpm: 118,
+      wpm: input.wpm,
       utterances: {
         create: input.utterances.map((u) => ({
           referenceText: u.referenceText,
@@ -770,7 +905,6 @@ export async function completeSpeakingSession(input: {
     }
   }
 
-  const isFirstSessionToday = user.spokenTodayMinutes === 0;
   const newClarityAvg =
     user.clarityAvg === 0
       ? input.clarityScore
@@ -779,19 +913,30 @@ export async function completeSpeakingSession(input: {
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      spokenTodayMinutes: { increment: input.addedMinutes },
-      totalSpokenMinutes: { increment: input.addedMinutes },
       clarityAvg: newClarityAvg,
-      ...(isFirstSessionToday ? { streakDays: { increment: 1 } } : {}),
     },
   });
 
-  await prisma.dailyActivity.updateMany({
-    where: { userId: user.id, isToday: true },
-    data: { minutesSpoken: { increment: input.addedMinutes } },
-  });
+  let chapterCompleted = false;
+  if (input.chapterKey) {
+    chapterCompleted = await verifyChapterCompletion(
+      user,
+      input.chapterKey,
+      input.utterances.map((u) => u.referenceText)
+    );
+    if (chapterCompleted) {
+      const existing = await prisma.chapterProgress.findUnique({
+        where: { userId_chapterKey: { userId: user.id, chapterKey: input.chapterKey } },
+      });
+      await prisma.chapterProgress.upsert({
+        where: { userId_chapterKey: { userId: user.id, chapterKey: input.chapterKey } },
+        update: { bestClarity: Math.max(existing?.bestClarity ?? 0, input.clarityScore) },
+        create: { userId: user.id, chapterKey: input.chapterKey, bestClarity: input.clarityScore },
+      });
+    }
+  }
 
-  return createdSession;
+  return { ...createdSession, chapterCompleted };
 }
 
 export async function updateOnboardingProfile(input: {
@@ -803,6 +948,8 @@ export async function updateOnboardingProfile(input: {
   onboardingCompleted?: boolean;
   micChecked?: boolean;
   activeScenarioSlug?: string;
+  leagueOptIn?: boolean;
+  leagueNickname?: string | null;
 }) {
   const user = await getActiveUser();
   const primaryGoal = input.goals?.[0] ?? user.goals[0] ?? "kerja";
@@ -817,10 +964,7 @@ export async function updateOnboardingProfile(input: {
       ...(input.cefrLevel
         ? {
             cefrLevel: input.cefrLevel,
-            cefrProgressLabel:
-              user.totalSpokenMinutes > 0
-                ? `${input.cefrLevel} menuju level berikutnya`
-                : `Level awal ${input.cefrLevel}`,
+            cefrProgressLabel: `Level ${input.cefrLevel}`,
           }
         : {}),
       ...(typeof input.dailyTargetMinutes === "number"
@@ -837,6 +981,8 @@ export async function updateOnboardingProfile(input: {
         ? { micChecked: input.micChecked }
         : {}),
       ...(mappedScenarioSlug ? { activeScenarioSlug: mappedScenarioSlug } : {}),
+      ...(typeof input.leagueOptIn === "boolean" ? { leagueOptIn: input.leagueOptIn } : {}),
+      ...(input.leagueNickname !== undefined ? { leagueNickname: input.leagueNickname } : {}),
     },
   });
 }
@@ -849,4 +995,70 @@ export async function updateSessionConfidence(
     where: { id: sessionId },
     data: { confidenceRating },
   });
+}
+
+/**
+ * Teks yang boleh dibacakan TTS: satu kata, atau teks yang memang ada di materi Ucapin
+ * (kalimat drill, dialog dan petunjuk roleplay, frasa berguna). Mencegah endpoint TTS
+ * dipakai untuk membacakan teks bebas yang menghabiskan kuota.
+ */
+export async function isKnownLearningText(text: string): Promise<boolean> {
+  if (/^[A-Za-z'-]{1,24}$/.test(text)) return true;
+  const jsonNeedle = JSON.stringify(text);
+  const [drill, line, hint, phrase] = await Promise.all([
+    prisma.drillSentence.count({ where: { text } }),
+    prisma.scenarioNode.count({ where: { speakerLine: text } }),
+    prisma.scenarioNode.count({ where: { hintsJson: { contains: jsonNeedle } } }),
+    prisma.scenario.count({ where: { usefulPhrasesJson: { contains: jsonNeedle } } }),
+  ]);
+  return drill + line + hint + phrase > 0;
+}
+
+/** Semua data milik pengguna aktif dalam satu berkas (hak akses dan portabilitas data, UU PDP). */
+export async function exportActiveUserData() {
+  const user = await getActiveUser();
+  const [profile, sessions, mistakes, attempts] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        email: true,
+        name: true,
+        cefrLevel: true,
+        goals: true,
+        dailyTargetMinutes: true,
+        correctionPref: true,
+        saveAudioOptIn: true,
+        leagueOptIn: true,
+        leagueNickname: true,
+        consentDate: true,
+        createdAt: true,
+      },
+    }),
+    prisma.speakingSession.findMany({
+      where: { userId: user.id },
+      include: { utterances: true },
+      orderBy: { startedAt: "asc" },
+    }),
+    prisma.mistakeItem.findMany({ where: { userId: user.id } }),
+    prisma.speechAttempt.findMany({
+      where: { userId: user.id },
+      select: { audioSec: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+  return {
+    exportedAt: new Date().toISOString(),
+    catatan: "Ucapin tidak menyimpan audio rekaman. Yang tersimpan hanya durasi rekaman dan hasil penilaian.",
+    profil: profile,
+    sesiLatihan: sessions,
+    bankKesalahan: mistakes,
+    rekamanDinilai: attempts,
+  };
+}
+
+/** Menghapus akun pengguna aktif beserta seluruh datanya (relasi onDelete: Cascade). */
+export async function deleteActiveUser(): Promise<string> {
+  const user = await getActiveUser();
+  await prisma.user.delete({ where: { id: user.id } });
+  return user.id;
 }

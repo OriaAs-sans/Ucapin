@@ -16,6 +16,7 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { UserProfileDTO } from "@/types/ucapin";
+import { AccountDataPanel } from "@/features/onboarding/account-data-panel";
 import { cn } from "@/lib/utils";
 
 const GOAL_OPTIONS = [
@@ -508,6 +509,7 @@ export function OnboardingGoalForm({ user }: { user: UserProfileDTO }) {
             </div>
           </div>
         </form>
+        {isReconfiguring && <AccountDataPanel />}
       </main>
     </div>
   );

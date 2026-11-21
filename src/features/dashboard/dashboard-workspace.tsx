@@ -12,6 +12,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { LeaguePanel } from "@/features/dashboard/league-panel";
 import { PhoneticSpecimenCard } from "@/components/shared/phonetic-specimen-card";
 import { PhoneticWordRow } from "@/components/shared/phonetic-word-row";
 import { Badge } from "@/components/ui/badge";
@@ -168,48 +169,11 @@ export function DashboardWorkspace({
         </div>
       </section>
 
-      <section aria-labelledby="league-title">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 id="league-title" className="font-display text-lg font-bold">
-            Peringkat Pelajar
-          </h2>
-          <Badge variant="ochre">menit bicara</Badge>
-        </div>
-        <div className="grid gap-1.5">
-          {league.map((entry) => (
-            <div
-              key={entry.id}
-              className={cn(
-                "flex items-center gap-2.5 rounded-[12px] px-2.5 py-2",
-                entry.isCurrentUser && "bg-[var(--tile-coral)]"
-              )}
-            >
-              <span className="w-4 font-bold text-[var(--text-2)]">
-                {entry.rank}
-              </span>
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "grid h-9 w-9 shrink-0 place-items-center rounded-full font-display text-xs font-extrabold",
-                  entry.isCurrentUser
-                    ? "bg-[var(--coral)] text-[var(--on-coral)]"
-                    : "bg-[var(--teal-600)] text-[#F7F5EE]"
-                )}
-              >
-                {entry.initials}
-              </span>
-              <span className="flex-1 font-bold">{entry.name}</span>
-              <span className="text-xs font-semibold text-[var(--text-2)] tabular-nums">
-                {entry.minutesSpoken} mnt
-              </span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-[var(--text-2)]">
-          Diurutkan dari total menit bicara, bukan skor pengucapan. Yang
-          dihitung usahamu, bukan aksenmu.
-        </p>
-      </section>
+      <LeaguePanel
+        optedIn={user.leagueOptIn}
+        nickname={user.leagueNickname}
+        league={league}
+      />
     </>
   );
 

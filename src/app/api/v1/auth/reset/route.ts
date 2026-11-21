@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/server/db";
-import { seedUcapinDatabase } from "@/server/seed-data";
+import { seedTestAccounts } from "@/server/seed-data";
 import { setSessionCookie } from "@/server/session";
 import {
   isTestAccountId,
@@ -8,7 +8,7 @@ import {
   testAccountsEnabled,
 } from "@/server/test-accounts";
 
-// Menghapus seluruh data dan mengisi ulang data testing. Hanya aktif di mode pengembangan.
+// Mengisi ulang dua akun testing beserta riwayat contohnya. Hanya aktif di mode pengembangan.
 export async function POST(request: Request) {
   if (!testAccountsEnabled()) {
     return NextResponse.json({ ok: false, error: "Tidak ditemukan." }, { status: 404 });
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         ? body.userId
         : TEST_ACCOUNT_IDS.fresh;
 
-    await seedUcapinDatabase(prisma);
+    await seedTestAccounts(prisma);
 
     const response = NextResponse.json({
       ok: true,

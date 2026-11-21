@@ -110,6 +110,22 @@ c:\My things\Project\Ucapin\
 - **Bank Kesalahan:** hanya kata dengan masalah bunyi nyata yang masuk (bukan kata fungsi yang terlewat, bukan saat kalimat yang diucapkan berbeda). Jadwal: tahap 0 ulang hari ini; setiap kali kata jatuh tempo terdengar jelas, naik ke jarak 1, 3, 7, 14 hari; berhasil di tahap 4 = dikuasai. Salah lagi = kembali ke tahap 0. Kolom: `reviewStage`, `nextReviewAt`, `lastPracticedAt`, `masteredAt` (migrasi `20261121120000_mistake_spaced_repetition`).
 - **Menit bicara** untuk target harian dan liga dihitung dari lama rekaman, bukan lama halaman terbuka.
 
+## 4c. Bab, statistik, dan privasi (diperbarui 2026-11-21)
+- **Bab:** Latihan Ucapan dibagi per tujuan x level (5 kalimat per bab, kunci `drill:<tujuan>:<level>`); Roleplay per skenario (`roleplay:<slug>`), diurutkan per level lalu urutan materi. Bab pertama tiap jalur terbuka, berikutnya terbuka setelah bab sebelumnya selesai (`ChapterProgress`). Logika murni di `src/lib/chapters.ts`; peta bab memakai `<ChapterMap />` (`src/components/shared/chapter-map.tsx`).
+- **Verifikasi bab di server** (`verifyChapterCompletion`): bab terbuka, sesi memuat semua kalimat/giliran, dan ada rekaman yang dinilai server (`SpeechAttempt`) sebanyak isi bab dalam 3 jam terakhir. Bab terkunci yang dibuka lewat URL dialihkan ke peta dengan pesan.
+- **Statistik dari data bertanggal (WIB):** menit hari ini, total, streak, grafik minggu ini, dan liga dihitung di `src/server/activity.ts` dari `SpeechAttempt` (durasi audio yang dinilai server, tanpa audio dan transkrip). Tidak ada penghitung tersimpan, jadi pergantian hari otomatis dan menit tidak bisa dipalsukan dari browser. Tabel `DailyActivity` dan `LeagueEntry` dihapus.
+- **Liga mingguan** opt-in dengan nama panggilan (`leagueOptIn`, `leagueNickname`), reset tiap Senin 00.00 WIB, 10 teratas + posisi sendiri.
+- **Kuota dan biaya:** pengenal suara 20 rekaman/menit dan 400/hari per pengguna (dihitung dari database). TTS hanya untuk teks materi (`isKnownLearningText`) dan di-cache di tabel `TtsCache`.
+- **Hak data (UU PDP):** `GET /api/v1/account` unduh semua data (JSON), `DELETE /api/v1/account` hapus akun + semua data (konfirmasi teks "HAPUS"); panel di halaman Tujuan & Target. Kebijakan privasi di `/privasi` (draf; bagian `[ISI: ...]` wajib dilengkapi pemilik).
+- **Header keamanan** di `next.config.ts`: CSP (tanpa `unsafe-eval` di production), HSTS, X-Frame-Options DENY, Permissions-Policy mikrofon hanya untuk situs sendiri. Input API dibatasi panjang dan formatnya.
+- **Seed:** `seedContent` (materi saja, aman untuk production: `npm run db:seed:content`) dan `seedTestAccounts` (khusus dev, hanya dua akun testing).
+
+## 6. Deploy (Supabase + Vercel)
+- Database: Postgres Supabase region Tokyo (ap-northeast-1). `DATABASE_URL` = pooler transaction (port 6543, `?pgbouncer=true`), `DIRECT_URL` = koneksi langsung untuk migrasi.
+- Vercel region `hnd1` Tokyo, sama dengan database Supabase (`vercel.json`); build `npm run vercel-build` = `prisma migrate deploy && next build`; `postinstall` menjalankan `prisma generate`.
+- Variabel lingkungan di Vercel: `DATABASE_URL`, `DIRECT_URL`, `SESSION_SECRET` (sampai Supabase Auth aktif), `ELEVENLABS_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. `ENABLE_TEST_ACCOUNTS` tidak diisi.
+- Setelah deploy pertama: jalankan `npm run db:seed:content` sekali ke database production.
+
 ## 5. Autentikasi & kredensial
 - **Tidak ada email/sandi di kode, seed, default schema, atau teks UI.** Akun testing dibaca dari env: `TEST_ACCOUNT_NEW_EMAIL`, `TEST_ACCOUNT_ACTIVE_EMAIL`, `TEST_ACCOUNT_PASSWORD`. Seed berhenti sebelum menghapus data jika salah satunya kosong.
 - Sandi disimpan di kolom `User.passwordHash` (scrypt + salt acak). Migrasi `20261121090000_hash_user_passwords` mengosongkan sandi teks lama, jadi database lama perlu `npm run db:reset`.
@@ -117,7 +133,7 @@ c:\My things\Project\Ucapin\
 - Pintasan 1-klik dan `POST /api/v1/auth/reset` hanya aktif bila `NODE_ENV !== "production"` dan `ENABLE_TEST_ACCOUNTS="true"`, dan hanya untuk id akun testing.
 - File env: Next.js membaca `.env` lalu `.env.local`; Prisma CLI hanya `.env`; script `db:seed`/`db:reset`/`db:setup` membaca keduanya lewat `tsx --env-file-if-exists`. Rahasia ditaruh di `.env.local`; contoh kosong di `.env.example`.
 
-## 6. Privasi & kepatuhan (UU PDP 27/2022)
+## 7. Privasi & kepatuhan (UU PDP 27/2022)
 - Rekaman suara = data pribadi. Default `saveAudioOptIn = false` di tabel `User`: audio diproses di memori dan tidak disimpan.
 - Audio rekaman dikirim ke ElevenLabs hanya untuk ditranskrip dan tidak disimpan Ucapin; ini disebut terbuka di persetujuan saat daftar.
 - Pengguna dapat mengubah preferensi `saveAudioOptIn` dan `correctionPref` (`giliran` vs `akhir`) di `/cek-mikrofon`, yang langsung disimpan ke tabel `User` lewat `PATCH /api/v1/onboarding`.

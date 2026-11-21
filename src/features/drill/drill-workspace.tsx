@@ -29,26 +29,26 @@ import {
 } from "@/lib/speech-assessor";
 import type { DrillSentenceDTO, UserProfileDTO } from "@/types/ucapin";
 
+export interface DrillChapterInfo {
+  key: string;
+  order: number;
+  title: string;
+  pathLabel: string;
+}
+
 export interface DrillWorkspaceProps {
   user: UserProfileDTO;
   sentences: DrillSentenceDTO[];
   activeGoal: string;
+  /** Diisi bila latihan ini satu bab; kosong untuk latihan dari Bank Kesalahan. */
+  chapter?: DrillChapterInfo;
   isFirstOnboardingStep?: boolean;
 }
 
-const GOAL_TABS = [
-  { id: "user", label: "Sesuai Tujuanmu" },
-  { id: "kerja", label: "Wawancara & Kerja" },
-  { id: "jalan", label: "Jalan-jalan" },
-  { id: "ielts", label: "IELTS & Kuliah" },
-  { id: "harian", label: "Sehari-hari" },
-  { id: "bank", label: "Dari Bank Kesalahan" },
-];
-
 export function DrillWorkspace({
-  user,
   sentences,
   activeGoal,
+  chapter,
   isFirstOnboardingStep = false,
 }: DrillWorkspaceProps) {
   const router = useRouter();
@@ -70,6 +70,10 @@ export function DrillWorkspace({
   >([]);
 
   const current = sentences[index] ?? sentences[0];
+  // Bab selesai bila setiap kalimat sudah direkam dan dinilai minimal sekali.
+  const recordedTexts = new Set(completedHistory.map((h) => h.referenceText));
+  const recordedCount = sentences.filter((sn) => recordedTexts.has(sn.text)).length;
+  const allRecorded = sentences.length > 0 && recordedCount === sentences.length;
   const totalInDeck = sentences.length;
   const progressValue = Math.round(
     ((index + 1) / Math.max(1, totalInDeck)) * 100
@@ -167,18 +171,8 @@ export function DrillWorkspace({
   const handleFinishSession = async () => {
     setFinishingSession(true);
     try {
-      const historyToSave =
-        completedHistory.length > 0
-          ? completedHistory
-          : assessment
-          ? [
-              {
-                referenceText: current.text,
-                assessment,
-                durationSec: 30,
-              },
-            ]
-          : [];
+      const historyToSave = completedHistory;
+      if (historyToSave.length === 0) return;
 
       const allMistakes = historyToSave.flatMap(
         (h) => h.assessment.flaggedMistakes
@@ -200,13 +194,20 @@ export function DrillWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "drill",
-          scenarioTitle: `Latihan Ucapan: ${current.category}`,
-          durationSec: Math.max(60, totalSec),
+          scenarioTitle: chapter
+            ? `Latihan Ucapan: ${chapter.pathLabel} · Bab ${chapter.order}`
+            : `Latihan Ucapan: ${current.category}`,
+          chapterKey: chapter?.key,
+          durationSec: Math.round(totalSec),
           // Menit bicara dihitung dari lama rekaman sungguhan.
           addedMinutes: Math.max(1, Math.round(totalSec / 60)),
           clarityScore: avgScore(0, 0),
           pronunciationScore: avgScore(1, 0),
           fluencyScore: avgScore(2, 0),
+          wpm: Math.round(
+            historyToSave.reduce((acc, h) => acc + h.assessment.wordsPerMinute, 0) /
+              Math.max(1, historyToSave.length)
+          ),
           utterances: historyToSave.map((h) => ({
             referenceText: h.referenceText,
             transcript: h.assessment.spokenTranscript,
@@ -223,7 +224,7 @@ export function DrillWorkspace({
                 : `Koreksi pada kata: ${h.assessment.flaggedMistakes
                     .map((m) => m.word)
                     .join(", ")}`,
-            clarityScore: h.assessment.scores[0]?.score ?? 85,
+            clarityScore: h.assessment.scores[0]?.score ?? 0,
           })),
           mistakes: allMistakes,
         }),
@@ -464,8 +465,8 @@ export function DrillWorkspace({
           <div className="flex items-center gap-3">
             <Badge variant="coral">Langkah 3 dari 3 · Latihan Pertama</Badge>
             <p className="text-sm font-semibold text-[var(--text)]">
-              Ucapkan kalimat di bawah ini dengan mikrofon (atau klik penguji
-              transkrip), lalu klik <strong>Selesai & Lihat Hasil Sesi</strong>!
+              Ketuk mikrofon, ucapkan kalimat di bawah, lalu ketuk{" "}
+              <strong>Selesai &amp; Lihat Hasil Sesi</strong> setelah dinilai.
             </p>
           </div>
           <ol
@@ -483,16 +484,18 @@ export function DrillWorkspace({
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button asChild variant="surface" size="icon">
-            <Link href="/" aria-label="Kembali ke Beranda">
+            <Link href="/latihan-ucapan" aria-label="Kembali ke daftar bab">
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </Link>
           </Button>
           <div>
             <p className="text-xs font-semibold text-[var(--text-2)]">
-              Latihan Ucapan · Level {current.cefrLevel}
+              {chapter
+                ? `${chapter.pathLabel} · Bab ${chapter.order}`
+                : "Latihan dari Bank Kesalahan"}
             </p>
             <h1 className="font-display text-2xl font-extrabold">
-              {current.category}
+              {chapter ? chapter.title : "Kata yang jatuh tempo hari ini"}
             </h1>
           </div>
         </div>
@@ -515,36 +518,6 @@ export function DrillWorkspace({
           </div>
         </div>
       </header>
-
-      {/* Curriculum Goal Filter Bar */}
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        role="navigation"
-        aria-label="Filter paket kalimat berdasarkan tujuan belajar"
-      >
-        {GOAL_TABS.map((tab) => {
-          const isSelected =
-            (tab.id === "user" && activeGoal === (user.goals[0] ?? "kerja")) ||
-            tab.id === activeGoal;
-          const href =
-            tab.id === "user"
-              ? "/latihan-ucapan"
-              : tab.id === "bank"
-              ? "/latihan-ucapan?source=bank"
-              : `/latihan-ucapan?goal=${tab.id}`;
-          return (
-            <Button
-              key={tab.id}
-              asChild
-              variant={isSelected ? "default" : "surface"}
-              size="sm"
-              className="min-h-[36px] rounded-pill px-3.5 text-xs"
-            >
-              <Link href={href}>{tab.label}</Link>
-            </Button>
-          );
-        })}
-      </div>
 
       {/* Reusable Editorial Proofreading Sentence Card driven by REAL assessment marks */}
       <ProofreadingSentence
@@ -704,18 +677,22 @@ export function DrillWorkspace({
         </Button>
 
         <div className="flex flex-wrap items-center gap-3">
-          {(assessment || completedHistory.length > 0) && (
+          {completedHistory.length > 0 && (
             <Button
               type="button"
-              variant="accent"
+              variant={!chapter || allRecorded ? "accent" : "surface"}
               disabled={finishingSession}
               onClick={handleFinishSession}
             >
               <Check className="h-4 w-4" aria-hidden="true" />
               <span>
                 {finishingSession
-                  ? "Menyimpan Sesi..."
-                  : "Selesai & Lihat Hasil Sesi"}
+                  ? "Menyimpan..."
+                  : !chapter
+                  ? "Selesai & Lihat Hasil Sesi"
+                  : allRecorded
+                  ? "Selesaikan bab"
+                  : `Simpan dulu (${recordedCount}/${sentences.length} direkam)`}
               </span>
             </Button>
           )}

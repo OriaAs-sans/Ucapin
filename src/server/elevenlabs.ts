@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { prisma } from "@/server/db";
 
 // Klien ElevenLabs khusus server. Kunci API tidak pernah dikirim ke browser.
 const API_BASE = "https://api.elevenlabs.io/v1";
@@ -91,22 +92,16 @@ export async function transcribeEnglish(audio: Blob): Promise<TranscriptionResul
   };
 }
 
-// Cache TTS di memori proses: teks contoh yang sama tidak membakar kuota berulang kali.
-const TTS_CACHE_LIMIT = 300;
-const ttsCache = new Map<string, Buffer>();
-
+// Cache TTS di database: teks contoh yang sama tidak membakar kuota berulang kali,
+// dan cache berlaku untuk semua instance serverless.
 export async function synthesizeEnglish(text: string, speed: number): Promise<Buffer> {
   const voiceId = process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE_ID;
   const cacheKey = createHash("sha256")
     .update(`${voiceId}|${TTS_MODEL}|${speed}|${text}`)
     .digest("hex");
 
-  const cached = ttsCache.get(cacheKey);
-  if (cached) {
-    ttsCache.delete(cacheKey);
-    ttsCache.set(cacheKey, cached);
-    return cached;
-  }
+  const cached = await prisma.ttsCache.findUnique({ where: { key: cacheKey } });
+  if (cached) return Buffer.from(cached.audio);
 
   const res = await fetch(
     `${API_BASE}/text-to-speech/${voiceId}?output_format=mp3_44100_64`,
@@ -129,26 +124,8 @@ export async function synthesizeEnglish(text: string, speed: number): Promise<Bu
   }
 
   const audio = Buffer.from(await res.arrayBuffer());
-  ttsCache.set(cacheKey, audio);
-  if (ttsCache.size > TTS_CACHE_LIMIT) {
-    const oldest = ttsCache.keys().next().value;
-    if (oldest) ttsCache.delete(oldest);
-  }
+  await prisma.ttsCache
+    .upsert({ where: { key: cacheKey }, update: {}, create: { key: cacheKey, audio } })
+    .catch((e) => console.error("Gagal menyimpan cache TTS", e));
   return audio;
-}
-
-// Pembatas sederhana per pengguna agar satu akun tidak menghabiskan kuota.
-const usage = new Map<string, number[]>();
-
-export function allowRequest(userId: string, kind: string, limitPerMinute: number): boolean {
-  const key = `${kind}:${userId}`;
-  const now = Date.now();
-  const recent = (usage.get(key) ?? []).filter((t) => now - t < 60_000);
-  if (recent.length >= limitPerMinute) {
-    usage.set(key, recent);
-    return false;
-  }
-  recent.push(now);
-  usage.set(key, recent);
-  return true;
 }

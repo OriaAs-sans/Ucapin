@@ -16,7 +16,10 @@
     "db:studio": "prisma studio",
     "db:setup": "prisma migrate deploy && tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed.ts",
     "typecheck": "tsc --noEmit -p .",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:seed:content": "tsx --env-file-if-exists=.env --env-file-if-exists=.env.local prisma/seed-content.ts",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma migrate deploy && next build"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

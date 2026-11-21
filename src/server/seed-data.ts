@@ -1811,22 +1811,15 @@ const SCENARIO_SEEDS: ScenarioSeed[] = [
   },
 ];
 
-export async function seedUcapinDatabase(prisma: PrismaClient) {
-  // Dibaca sebelum menghapus data, agar env yang kosong tidak meninggalkan database kosong.
-  const credentials = readTestAccountCredentials();
-  const testPasswordHash = await hashPassword(credentials.password);
-
-  await prisma.phonemeScore.deleteMany();
-  await prisma.utterance.deleteMany();
-  await prisma.speakingSession.deleteMany();
-  await prisma.mistakeItem.deleteMany();
-  await prisma.dailyActivity.deleteMany();
+/**
+ * Materi belajar saja (panduan fonem, kalimat drill, skenario roleplay).
+ * Aman untuk production: tidak menyentuh pengguna, sesi, atau Bank Kesalahan.
+ */
+export async function seedContent(prisma: PrismaClient) {
   await prisma.scenarioNode.deleteMany();
   await prisma.scenario.deleteMany();
   await prisma.drillSentence.deleteMany();
   await prisma.phonemeGuide.deleteMany();
-  await prisma.leagueEntry.deleteMany();
-  await prisma.user.deleteMany();
 
   // 1. Seed 5 Core Indonesian Phoneme Guides (Curriculum Reference Data)
   await prisma.phonemeGuide.createMany({
@@ -1944,125 +1937,6 @@ export async function seedUcapinDatabase(prisma: PrismaClient) {
     ],
   });
 
-  // 2. Seed Account 1: Truly Fresh User from Zero (Budi Santoso - 0 progress, 0 goals preselected)
-  const budi = await prisma.user.create({
-    data: {
-      id: TEST_ACCOUNT_IDS.fresh,
-      email: credentials.freshEmail,
-      passwordHash: testPasswordHash,
-      name: "Budi Santoso",
-      initials: "BS",
-      roleLabel: "Pelajar Baru",
-      cefrLevel: "A2",
-      cefrProgressLabel: "Belum ada sesi",
-      cefrProgressPct: 0,
-      goals: [],
-      dailyTargetMinutes: 10,
-      spokenTodayMinutes: 0,
-      totalSpokenMinutes: 0,
-      clarityAvg: 0,
-      streakDays: 0,
-      streakFreezes: 2,
-      correctionPref: "giliran",
-      saveAudioOptIn: false,
-      onboardingCompleted: false,
-      micChecked: false,
-      activeScenarioSlug: "wawancara-startup",
-    },
-  });
-
-  await prisma.dailyActivity.createMany({
-    data: [
-      { userId: budi.id, dayOrder: 1, dayLabel: "Sen", minutesSpoken: 0, isToday: false },
-      { userId: budi.id, dayOrder: 2, dayLabel: "Sel", minutesSpoken: 0, isToday: false },
-      { userId: budi.id, dayOrder: 3, dayLabel: "Rab", minutesSpoken: 0, isToday: false },
-      { userId: budi.id, dayOrder: 4, dayLabel: "Kam", minutesSpoken: 0, isToday: false },
-      { userId: budi.id, dayOrder: 5, dayLabel: "Jum", minutesSpoken: 0, isToday: true },
-      { userId: budi.id, dayOrder: 6, dayLabel: "Sab", minutesSpoken: 0, isToday: false },
-      { userId: budi.id, dayOrder: 7, dayLabel: "Min", minutesSpoken: 0, isToday: false },
-    ],
-  });
-
-  // 3. Seed Account 2: Experienced Learner (Alya Putri - B1, has completed sessions & mistakes)
-  const alya = await prisma.user.create({
-    data: {
-      id: TEST_ACCOUNT_IDS.active,
-      email: credentials.activeEmail,
-      passwordHash: testPasswordHash,
-      name: "Alya Putri",
-      initials: "AL",
-      roleLabel: "Product Designer · B1",
-      cefrLevel: "B1",
-      cefrProgressLabel: "B1 menuju B2",
-      cefrProgressPct: 65,
-      goals: ["kerja", "harian"],
-      dailyTargetMinutes: 15,
-      spokenTodayMinutes: 9,
-      totalSpokenMinutes: 49,
-      clarityAvg: 82,
-      streakDays: 5,
-      streakFreezes: 2,
-      correctionPref: "giliran",
-      saveAudioOptIn: false,
-      onboardingCompleted: true,
-      micChecked: true,
-      activeScenarioSlug: "memesan-di-kafe",
-    },
-  });
-
-  await prisma.dailyActivity.createMany({
-    data: [
-      { userId: alya.id, dayOrder: 1, dayLabel: "Sen", minutesSpoken: 8, isToday: false },
-      { userId: alya.id, dayOrder: 2, dayLabel: "Sel", minutesSpoken: 12, isToday: false },
-      { userId: alya.id, dayOrder: 3, dayLabel: "Rab", minutesSpoken: 6, isToday: false },
-      { userId: alya.id, dayOrder: 4, dayLabel: "Kam", minutesSpoken: 14, isToday: false },
-      { userId: alya.id, dayOrder: 5, dayLabel: "Jum", minutesSpoken: 9, isToday: true },
-      { userId: alya.id, dayOrder: 6, dayLabel: "Sab", minutesSpoken: 0, isToday: false },
-      { userId: alya.id, dayOrder: 7, dayLabel: "Min", minutesSpoken: 0, isToday: false },
-    ],
-  });
-
-  await prisma.mistakeItem.createMany({
-    data: [
-      {
-        userId: alya.id,
-        word: "very",
-        ipa: "/ˈvɛri/",
-        phoneme: "/v/",
-        errorPattern: "v → f",
-        heardAs: "terdengar “fery”",
-        sourceMode: "Roleplay: Memesan di kafe",
-        occurrenceCount: 3,
-        status: "work",
-        scheduleLabel: "hari ini",
-      },
-      {
-        userId: alya.id,
-        word: "think",
-        ipa: "/θɪŋk/",
-        phoneme: "/θ/",
-        errorPattern: "th → t",
-        heardAs: "terdengar “tink”",
-        sourceMode: "Roleplay: Wawancara kerja di startup",
-        occurrenceCount: 2,
-        status: "work",
-        scheduleLabel: "hari ini",
-      },
-      {
-        userId: alya.id,
-        word: "worked",
-        ipa: "/wɜrkt/",
-        phoneme: "/t/",
-        errorPattern: "-ed akhir",
-        heardAs: "bunyi /t/ akhir hilang",
-        sourceMode: "Latihan: Wawancara & karier",
-        occurrenceCount: 1,
-        status: "almost",
-        scheduleLabel: "besok",
-      },
-    ],
-  });
-
   // 4. Seed 60 Drill Sentences (4 learning goals x 3 CEFR levels x 5 sentences)
   await prisma.drillSentence.createMany({ data: DRILL_SENTENCES });
 
@@ -2098,19 +1972,157 @@ export async function seedUcapinDatabase(prisma: PrismaClient) {
     });
   }
 
-  // 6. Seed 1 historical session ONLY for Alya (Budi has 0 sessions!)
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Dua akun testing beserta riwayat contoh, khusus pengembangan.
+ * Hanya akun testing yang dihapus dan dibuat ulang; pengguna lain tidak disentuh.
+ */
+export async function seedTestAccounts(prisma: PrismaClient) {
+  const credentials = readTestAccountCredentials();
+  const testPasswordHash = await hashPassword(credentials.password);
+  await prisma.user.deleteMany({ where: { id: { in: Object.values(TEST_ACCOUNT_IDS) } } });
+
+  await prisma.user.create({
+    data: {
+      id: TEST_ACCOUNT_IDS.fresh,
+      email: credentials.freshEmail,
+      passwordHash: testPasswordHash,
+      name: "Budi Santoso",
+      initials: "BS",
+      roleLabel: "Pelajar Baru",
+      cefrLevel: "A2",
+      cefrProgressLabel: "Level A2",
+      cefrProgressPct: 0,
+      goals: [],
+      dailyTargetMinutes: 10,
+      clarityAvg: 0,
+      streakFreezes: 2,
+      correctionPref: "giliran",
+      saveAudioOptIn: false,
+      onboardingCompleted: false,
+      micChecked: false,
+      activeScenarioSlug: "wawancara-startup",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      id: TEST_ACCOUNT_IDS.active,
+      email: credentials.activeEmail,
+      passwordHash: testPasswordHash,
+      name: "Alya Putri",
+      initials: "AL",
+      roleLabel: "Product Designer · B1",
+      cefrLevel: "B1",
+      cefrProgressLabel: "Level B1",
+      cefrProgressPct: 0,
+      goals: ["kerja", "harian"],
+      dailyTargetMinutes: 15,
+      clarityAvg: 82,
+      streakFreezes: 2,
+      correctionPref: "giliran",
+      saveAudioOptIn: false,
+      onboardingCompleted: true,
+      micChecked: true,
+      activeScenarioSlug: "memesan-di-kafe",
+      leagueOptIn: true,
+      leagueNickname: "Alya",
+    },
+  });
+
+  await prisma.mistakeItem.createMany({
+    data: [
+      {
+        userId: TEST_ACCOUNT_IDS.active,
+        word: "very",
+        ipa: "/ˈvɛri/",
+        phoneme: "/v/",
+        errorPattern: "v → f",
+        heardAs: "terdengar “fery”",
+        sourceMode: "Roleplay: Memesan di kafe",
+        occurrenceCount: 3,
+        status: "work",
+        scheduleLabel: "hari ini",
+      },
+      {
+        userId: TEST_ACCOUNT_IDS.active,
+        word: "think",
+        ipa: "/θɪŋk/",
+        phoneme: "/θ/",
+        errorPattern: "th → t",
+        heardAs: "terdengar “tink”",
+        sourceMode: "Roleplay: Wawancara kerja di startup",
+        occurrenceCount: 2,
+        status: "work",
+        scheduleLabel: "hari ini",
+      },
+      {
+        userId: TEST_ACCOUNT_IDS.active,
+        word: "worked",
+        ipa: "/wɜrkt/",
+        phoneme: "/t/",
+        errorPattern: "-ed akhir",
+        heardAs: "bunyi /t/ akhir hilang",
+        sourceMode: "Latihan: Wawancara & karier",
+        occurrenceCount: 1,
+        status: "almost",
+        scheduleLabel: "besok",
+      },
+    ],
+  });
+
+  // Riwayat contoh: satu sesi per hari selama 5 hari terakhir (termasuk hari ini),
+  // agar streak, grafik minggu ini, dan liga dihitung lewat jalur yang sama dengan pengguna nyata.
+  const now = Date.now();
+  const pastMinutes = [8, 12, 6, 14];
+  for (let i = 0; i < pastMinutes.length; i++) {
+    await prisma.speakingSession.create({
+      data: {
+        userId: TEST_ACCOUNT_IDS.active,
+        mode: "drill",
+        scenarioTitle: "Latihan Ucapan: Wawancara & karier",
+        durationSec: pastMinutes[i] * 60,
+        spokenMinutes: pastMinutes[i],
+        clarityScore: 76 + i * 2,
+        pronunciationScore: 78,
+        fluencyScore: 80,
+        grammarScore: 0,
+        vocabularyScore: 0,
+        wpm: 120,
+        startedAt: new Date(now - (pastMinutes.length - i) * DAY_MS),
+        endedAt: new Date(now - (pastMinutes.length - i) * DAY_MS),
+      },
+    });
+  }
+
+  // Menit bicara dihitung dari rekaman yang dinilai server: satu rekaman 60 detik per menit contoh.
+  const attemptDays = [...pastMinutes.map((m, i) => ({ minutes: m, daysAgo: pastMinutes.length - i })), { minutes: 9, daysAgo: 0 }];
+  await prisma.speechAttempt.createMany({
+    data: attemptDays.flatMap(({ minutes, daysAgo }) =>
+      Array.from({ length: minutes }, (_, k) => ({
+        userId: TEST_ACCOUNT_IDS.active,
+        audioSec: 60,
+        createdAt: new Date(now - daysAgo * DAY_MS - k * 1000),
+      }))
+    ),
+  });
+
   await prisma.speakingSession.create({
     data: {
       id: "session-cafe-sample",
-      userId: alya.id,
+      userId: TEST_ACCOUNT_IDS.active,
       mode: "roleplay",
       scenarioTitle: "Memesan di kafe",
       durationSec: 272,
+      spokenMinutes: 9,
       clarityScore: 82,
       pronunciationScore: 80,
       fluencyScore: 85,
-      grammarScore: 78,
-      vocabularyScore: 88,
+      grammarScore: 0,
+      vocabularyScore: 0,
       wpm: 118,
       confidenceRating: 4,
       utterances: {
@@ -2143,4 +2155,12 @@ export async function seedUcapinDatabase(prisma: PrismaClient) {
       },
     },
   });
+}
+
+/** Seed lengkap untuk pengembangan lokal: materi + akun testing. */
+export async function seedUcapinDatabase(prisma: PrismaClient) {
+  // Dibaca lebih dulu agar env yang kosong menghentikan seed sebelum data apa pun berubah.
+  readTestAccountCredentials();
+  await seedContent(prisma);
+  await seedTestAccounts(prisma);
 }

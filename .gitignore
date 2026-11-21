@@ -118,3 +118,4 @@ pnpm-debug.log*
 e2e/.fixtures/
 test-results/
 playwright-report/
+.next-build/

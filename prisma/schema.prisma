@@ -5,6 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Supabase: DATABASE_URL lewat pooler (port 6543), DIRECT_URL koneksi langsung untuk migrasi.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -19,23 +21,24 @@ model User {
   cefrProgressPct     Int               @default(70)
   goals               String[]          @default(["kerja", "harian"])
   dailyTargetMinutes  Int               @default(15)
-  spokenTodayMinutes  Int               @default(0)
-  totalSpokenMinutes  Int               @default(0)
   clarityAvg          Int               @default(0)
-  streakDays          Int               @default(0)
   streakFreezes       Int               @default(2)
   correctionPref      String            @default("giliran")
   saveAudioOptIn      Boolean           @default(false)
   onboardingCompleted Boolean           @default(false)
   micChecked          Boolean           @default(false)
   activeScenarioSlug  String            @default("memesan-di-kafe")
+  // Liga mingguan: ikut atas pilihan sendiri, hanya nama panggilan yang tampil.
+  leagueOptIn         Boolean           @default(false)
+  leagueNickname      String?
   consentDate         DateTime          @default(now())
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
   sessions            SpeakingSession[]
+  speechAttempts      SpeechAttempt[]
+  chapterProgress     ChapterProgress[]
   mistakes            MistakeItem[]
-  dailyActivities     DailyActivity[]
 }
 
 model PhonemeGuide {
@@ -109,11 +112,17 @@ model SpeakingSession {
   fluencyScore       Int
   grammarScore       Int
   vocabularyScore    Int
-  wpm                Int         @default(118)
+  wpm                Int         @default(0)
+  // Menit bicara dari lama rekaman; sumber target harian, streak, grafik, dan liga.
+  spokenMinutes      Int         @default(0)
+  // Bab yang dikerjakan di sesi ini (drill:<tujuan>:<level> atau roleplay:<slug>), bila ada.
+  chapterKey         String?
   confidenceRating   Int?
   startedAt          DateTime    @default(now())
   endedAt            DateTime    @default(now())
   utterances         Utterance[]
+
+  @@index([userId, startedAt])
 }
 
 model Utterance {
@@ -164,21 +173,35 @@ model MistakeItem {
   @@unique([userId, word])
 }
 
-model DailyActivity {
-  id            String  @id @default(cuid())
-  userId        String
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dayOrder      Int
-  dayLabel      String
-  minutesSpoken Int
-  isToday       Boolean @default(false)
+
+
+// Satu rekaman yang dinilai server. Hanya durasi dan waktu: audio dan transkrip tidak disimpan.
+// Sumber menit bicara (target harian, streak, liga) dan kuota pengenal suara.
+model SpeechAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  audioSec  Float
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
-model LeagueEntry {
-  id            String  @id @default(cuid())
-  rank          Int
-  name          String
-  initials      String
-  minutesSpoken Int
-  isCurrentUser Boolean @default(false)
+// Cache audio contoh TTS agar teks yang sama tidak dibuat ulang (berlaku lintas instance serverless).
+model TtsCache {
+  key       String   @id
+  audio     Bytes
+  createdAt DateTime @default(now())
+}
+
+// Bab yang sudah diselesaikan pengguna. Bab berikutnya di jalur yang sama terbuka setelah ini ada.
+model ChapterProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterKey  String
+  bestClarity Int      @default(0)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, chapterKey])
 }

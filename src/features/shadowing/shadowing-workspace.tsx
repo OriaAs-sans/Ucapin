@@ -159,6 +159,7 @@ export function ShadowingWorkspace({
           clarityScore: avg((r) => r.assessment.scores[0]?.score ?? 0),
           pronunciationScore: avg((r) => r.assessment.scores[1]?.score ?? 0),
           fluencyScore: avg((r) => r.tempoScore),
+          wpm: avg((r) => r.assessment.wordsPerMinute),
           utterances: history.map((r) => ({
             referenceText: r.referenceText,
             transcript: r.assessment.spokenTranscript,

@@ -18,41 +18,29 @@ export async function GET() {
   }
 }
 
+const VALID_STATUS: PhonemeStatus[] = ["ok", "almost", "work"];
+const text = (v: unknown, max: number, fallback: string) =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : fallback;
+
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const {
-      word,
-      ipa = "/.../",
-      phoneme = "/v/",
-      errorPattern = "v → f",
-      heardAs = "perlu latihan ulang",
-      sourceMode = "Latihan Ucapan",
-      status = "work",
-    } = body as {
-      word?: string;
-      ipa?: string;
-      phoneme?: string;
-      errorPattern?: string;
-      heardAs?: string;
-      sourceMode?: string;
-      status?: PhonemeStatus;
-    };
-
-    if (!word || typeof word !== "string") {
-      return NextResponse.json(
-        { ok: false, error: "Kata wajib diisi" },
-        { status: 400 }
-      );
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const word = typeof body.word === "string" ? body.word.trim() : "";
+    // Kata bahasa Inggris saja: huruf, apostrof, tanda hubung, maksimal 40 karakter.
+    if (!/^[A-Za-z'-]{1,40}$/.test(word)) {
+      return NextResponse.json({ ok: false, error: "Kata tidak valid." }, { status: 400 });
     }
+    const status = VALID_STATUS.includes(body.status as PhonemeStatus)
+      ? (body.status as PhonemeStatus)
+      : "work";
 
     const item = await recordMistakeInBank({
       word,
-      ipa,
-      phoneme,
-      errorPattern,
-      heardAs,
-      sourceMode,
+      ipa: text(body.ipa, 60, ""),
+      phoneme: text(body.phoneme, 20, ""),
+      errorPattern: text(body.errorPattern, 80, "perlu latihan ulang"),
+      heardAs: text(body.heardAs, 120, "perlu latihan ulang"),
+      sourceMode: text(body.sourceMode, 80, "Latihan Ucapan"),
       status,
     });
 

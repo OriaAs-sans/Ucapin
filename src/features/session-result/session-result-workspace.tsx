@@ -29,6 +29,8 @@ import { cn } from "@/lib/utils";
 
 export interface SessionResultWorkspaceProps {
   user: UserProfileDTO;
+  /** Sesi ini menyelesaikan satu bab (diverifikasi server). */
+  chapterJustCompleted?: boolean;
   session: SpeakingSessionDTO | null;
   sessionHistory: {
     id: string;
@@ -44,6 +46,7 @@ export function SessionResultWorkspace({
   session,
   sessionHistory,
   mistakes,
+  chapterJustCompleted = false,
 }: SessionResultWorkspaceProps) {
   const [confidence, setConfidence] = React.useState<number | null>(
     session?.confidenceRating ?? null
@@ -195,6 +198,23 @@ export function SessionResultWorkspace({
       rightPanel={rightPanel}
       rightPanelLabel="Riwayat kejelasan dan statistik akun"
     >
+      {chapterJustCompleted && (
+        <div
+          role="status"
+          className="enter-rise flex flex-wrap items-center justify-between gap-3 rounded-card border-[1.5px] border-[var(--ok)] bg-[var(--ok-wash)] px-5 py-3.5"
+        >
+          <p className="flex items-center gap-2 font-bold text-[var(--ok)]">
+            <Check className="h-5 w-5" aria-hidden="true" />
+            <span>Bab selesai. Bab berikutnya di jalur ini sudah terbuka.</span>
+          </p>
+          <Button asChild size="sm">
+            <Link href={session?.mode === "roleplay" ? "/roleplay" : "/latihan-ucapan"}>
+              Lanjut ke bab berikutnya
+            </Link>
+          </Button>
+        </div>
+      )}
+
       {/* Hero Clarity Ring Banner */}
       <section
         aria-labelledby="result-hero-title"

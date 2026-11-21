@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSessionUserId } from "@/server/repositories/ucapin-repository";
 import {
-  allowRequest,
-  SpeechServiceError,
-  synthesizeEnglish,
-} from "@/server/elevenlabs";
+  getSessionUserId,
+  isKnownLearningText,
+} from "@/server/repositories/ucapin-repository";
+import { SpeechServiceError, synthesizeEnglish } from "@/server/elevenlabs";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +22,11 @@ export async function GET(request: Request) {
   if (!text || text.length > MAX_TEXT_LENGTH) {
     return NextResponse.json({ ok: false, error: "Teks tidak valid." }, { status: 400 });
   }
-  if (!allowRequest(userId, "tts", 60)) {
-    return NextResponse.json({ ok: false, error: "Terlalu banyak permintaan." }, { status: 429 });
+  if (!(await isKnownLearningText(text))) {
+    return NextResponse.json(
+      { ok: false, error: "Teks ini bukan bagian dari materi latihan." },
+      { status: 403 }
+    );
   }
 
   try {

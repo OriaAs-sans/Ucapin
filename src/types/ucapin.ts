@@ -170,4 +170,6 @@ export interface UserProfileDTO {
   onboardingCompleted: boolean;
   micChecked: boolean;
   activeScenarioSlug: string;
+  leagueOptIn: boolean;
+  leagueNickname: string | null;
 }
